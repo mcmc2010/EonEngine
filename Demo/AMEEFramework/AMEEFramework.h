@@ -51,6 +51,6 @@ __attribute__ ((visibility("default")))
 //
 - (void)setExecuteHeader:(const MachHeader*)header;
 
-- (void)runApplicationMainWithArgs:(int)argc argv:(const char*[])argv;
+- (void)runApplicationMainWithArgc:(int)argc argv:(const char*[])argv;
 
 @end

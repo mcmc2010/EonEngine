@@ -101,6 +101,7 @@
 				3BAE876A2ED3202F002522AE /* AppKit.framework in Frameworks */,
 				3BAE87712ED32101002522AE /* CoreVideo.framework in Frameworks */,
 				3BAE87682ED31F30002522AE /* Foundation.framework in Frameworks */,
+				3BAE87732ED32201002522AE /* OpenGL.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -132,6 +133,7 @@
 			children = (
 				3BAE87692ED3202F002522AE /* AppKit.framework */,
 				3BAE87702ED32100002522AE /* CoreVideo.framework */,
+				3BAE87722ED32200002522AE /* OpenGL.framework */,
 				3BAE87672ED31F30002522AE /* Foundation.framework */,
 			);
 			name = Frameworks;
@@ -470,6 +472,10 @@
 				MARKETING_VERSION = 1.0;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++20";
+				OTHER_LDFLAGS = (
+					"-framework",
+					OpenGL,
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.mcmcx.eonengine.AMEEFramework;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
@@ -504,6 +510,10 @@
 				MARKETING_VERSION = 1.0;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++20";
+				OTHER_LDFLAGS = (
+					"-framework",
+					OpenGL,
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.mcmcx.eonengine.AMEEFramework;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;

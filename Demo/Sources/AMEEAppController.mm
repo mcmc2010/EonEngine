@@ -1,5 +1,20 @@
 #import "AMEEAppController.h"
 #import "AMEEGameLoop.h"
+#include <memory>
+#include "../AMEEFramework/Render/RHI.h"
+#include "../AMEEFramework/Render/GL/RHIOpenGL.h"
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+// NSOpenGLView is deprecated in macOS 10.14+ in favor of MTKView,
+// but we intentionally use OpenGL 4.1 for cross-platform compatibility.
+#import "../AMEEFramework/Platform/macOS/GLView.h"
+#pragma clang diagnostic pop
+
+// Declare conformance to AMEEGameLoopDelegate in implementation file
+// to avoid exposing internal protocol in public header.
+@interface AMEEAppController () <AMEEGameLoopDelegate>
+@end
 
 AMEEAppController* _AMEEAppController = nil;
 
@@ -8,7 +23,9 @@ AMEEAppController* GetAppController()
     return _AMEEAppController;
 }
 
-@implementation AMEEAppController
+@implementation AMEEAppController {
+    std::unique_ptr<RHI> _rhi;
+}
 
 - (id)init
 {
@@ -25,15 +42,18 @@ AMEEAppController* GetAppController()
     [self setupMenuBar];
     [self setupMainWindow];
 
+    _rhi = std::make_unique<RHIOpenGL>();
+
     self.gameLoop = [[AMEEGameLoop alloc] initWithDelegate:self];
     [self.gameLoop start];
 
-    NSLog(@"[AMEEAppController] Application launched");
+    NSLog(@"[AMEEAppController] Application launched with OpenGL 4.1");
 }
 
 - (void)applicationWillTerminate:(NSNotification *)aNotification
 {
     [self.gameLoop stop];
+    _rhi.reset();
     NSLog(@"[AMEEAppController] Application terminating");
 }
 
@@ -54,7 +74,6 @@ AMEEAppController* GetAppController()
     NSMenu *mainMenu = [[NSMenu alloc] init];
     [NSApp setMainMenu:mainMenu];
 
-    // App menu
     NSMenuItem *appMenuItem = [[NSMenuItem alloc] init];
     [mainMenu addItem:appMenuItem];
     NSMenu *appMenu = [[NSMenu alloc] initWithTitle:@"AMEE Engine"];
@@ -68,7 +87,6 @@ AMEEAppController* GetAppController()
                        action:@selector(terminate:)
                 keyEquivalent:@"q"];
 
-    // Window menu
     NSMenuItem *windowMenuItem = [[NSMenuItem alloc] init];
     [mainMenu addItem:windowMenuItem];
     NSMenu *windowMenu = [[NSMenu alloc] initWithTitle:@"Window"];
@@ -85,17 +103,20 @@ AMEEAppController* GetAppController()
 
 - (void)setupMainWindow
 {
+    NSRect contentRect = NSMakeRect(0, 0, 1024, 768);
+    self.glView = [[GLView alloc] initWithFrame:contentRect];
+
     NSUInteger styleMask = NSWindowStyleMaskTitled
         | NSWindowStyleMaskClosable
         | NSWindowStyleMaskMiniaturizable
         | NSWindowStyleMaskResizable;
 
-    NSRect contentRect = NSMakeRect(0, 0, 1024, 768);
     self.mainWindow = [[NSWindow alloc] initWithContentRect:contentRect
                                                  styleMask:styleMask
                                                    backing:NSBackingStoreBuffered
                                                      defer:NO];
-    self.mainWindow.title = @"AMEE Engine";
+    [self.mainWindow setContentView:self.glView];
+    self.mainWindow.title = @"AMEE Engine (OpenGL 4.1)";
     self.mainWindow.minSize = NSMakeSize(320, 240);
     [self.mainWindow center];
     [self.mainWindow makeKeyAndOrderFront:nil];
@@ -110,7 +131,16 @@ AMEEAppController* GetAppController()
 
 - (void)gameLoopRender:(double)deltaTime time:(double)time
 {
-    // TODO: rendering
+    [self.glView makeGLContextCurrent];
+
+    NSSize size = [self.glView drawableSize];
+    _rhi->setViewport({0.0f, 0.0f, (float)size.width, (float)size.height});
+
+    float t = (float)time * 0.5f;
+    _rhi->setClearColor(0.15f + 0.1f * sinf(t), 0.15f, 0.2f + 0.05f * sinf(t * 0.7f), 1.0f);
+
+    _rhi->clear();
+    _rhi->present();
 }
 
 @end
