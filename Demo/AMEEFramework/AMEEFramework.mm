@@ -88,7 +88,10 @@ AMEEFramework* g_pAMEEFramework = nil;
     // Set up application programmatically (no Storyboard dependency)
     NSApplication *app = [NSApplication sharedApplication];
     app.activationPolicy = NSApplicationActivationPolicyRegular;
-    [app setDelegate:[self getAppController]];
+
+    // Create AppController instance before setting as delegate
+    AMEEAppController *controller = [[AMEEAppController alloc] init];
+    [app setDelegate:controller];
     [app activateIgnoringOtherApps:YES];
 
     [app run];
