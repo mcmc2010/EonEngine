@@ -5,6 +5,7 @@
 #include "../AMEEFramework/Render/GL/RHIOpenGL.h"
 #include "../AMEEFramework/Render/Shader/GL/GLShader.h"
 #include "../AMEEFramework/Core/Math/AMEEMath.h"
+#include "../AMEEFramework/Core/Log/AMEELog.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
@@ -40,6 +41,8 @@ AMEEAppController* GetAppController()
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification
 {
+    amee::Logger::init(amee::LogLevel::Debug);
+    
     [self setupMenuBar];
     [self setupMainWindow];
 
@@ -51,7 +54,7 @@ AMEEAppController* GetAppController()
     self.gameLoop = [[AMEEGameLoop alloc] initWithDelegate:self];
     [self.gameLoop start];
 
-    NSLog(@"[AMEEAppController] Application launched with OpenGL 4.1");
+    AMEE_LOG_INFO("App", "Application launched with OpenGL 4.1");
 }
 
 - (void)applicationWillTerminate:(NSNotification *)aNotification
@@ -64,7 +67,8 @@ AMEEAppController* GetAppController()
     _triangleShader.reset();
     _rhi.reset();
 
-    NSLog(@"[AMEEAppController] Application terminating");
+    AMEE_LOG_INFO("App", "Application terminating");
+    amee::Logger::flush();
 }
 
 - (BOOL)applicationSupportsSecureRestorableState:(NSApplication *)app
@@ -130,6 +134,8 @@ AMEEAppController* GetAppController()
     self.mainWindow.minSize = NSMakeSize(320, 240);
     [self.mainWindow center];
     [self.mainWindow makeKeyAndOrderFront:nil];
+    
+    AMEE_LOG_INFO("Window", "Main window created (%dx%d)", 1024, 768);
 }
 
 - (void)setupTriangle
@@ -158,17 +164,17 @@ AMEEAppController* GetAppController()
     )";
 
     _triangleShader->compileFromSource(ShaderType::Vertex, vs, [](const ShaderCompileError& err) {
-        NSLog(@"[Shader] Vertex compile error: %s", err.message.c_str());
+        AMEE_LOG_ERROR("Shader", "Vertex compile error: %s", err.message.c_str());
     });
 
     _triangleShader->compileFromSource(ShaderType::Fragment, fs, [](const ShaderCompileError& err) {
-        NSLog(@"[Shader] Fragment compile error: %s", err.message.c_str());
+        AMEE_LOG_ERROR("Shader", "Fragment compile error: %s", err.message.c_str());
     });
 
     if (!_triangleShader->link([](const std::string& err) {
-        NSLog(@"[Shader] Link error: %s", err.c_str());
+        AMEE_LOG_ERROR("Shader", "Link error: %s", err.c_str());
     })) {
-        NSLog(@"[Shader] Failed to create triangle shader");
+        AMEE_LOG_ERROR("Shader", "Failed to create triangle shader");
         return;
     }
 
@@ -194,7 +200,7 @@ AMEEAppController* GetAppController()
     _rhi->bindVertexArray(0);
     _rhi->bindVertexBuffer(0);
 
-    NSLog(@"[AMEEAppController] Triangle shader ready");
+    AMEE_LOG_INFO("Renderer", "Triangle shader ready (VAO=%u, VBO=%u)", _triangleVAO, _triangleVBO);
 }
 
 #pragma mark - AMEEGameLoopDelegate
