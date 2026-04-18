@@ -1,7 +1,8 @@
-#import "AMEELog.h"
-#import <Foundation/Foundation.h>
+#include "AMEELog.h"
 #include <mutex>
 #include <ctime>
+#include <cstdio>
+#include <cstdarg>
 
 namespace amee {
 
@@ -21,10 +22,10 @@ static const char* levelToString(LogLevel level) {
 
 static const char* levelColor(LogLevel level) {
     switch (level) {
-        case LogLevel::Debug:   return "\033[36m";   // Cyan
-        case LogLevel::Info:    return "\033[32m";   // Green
-        case LogLevel::Warning: return "\033[33m";   // Yellow
-        case LogLevel::Error:   return "\033[31m";   // Red
+        case LogLevel::Debug:   return "\033[36m";
+        case LogLevel::Info:    return "\033[32m";
+        case LogLevel::Warning: return "\033[33m";
+        case LogLevel::Error:   return "\033[31m";
     }
     return "\033[0m";
 }
@@ -57,21 +58,17 @@ void Logger::vlog(LogLevel level, const char* tag, const char* fmt, va_list args
 
     std::lock_guard<std::mutex> lock(g_logMutex);
 
-    // Format timestamp
     time_t now = time(nullptr);
     struct tm* tm = localtime(&now);
     char timeStr[20];
     strftime(timeStr, sizeof(timeStr), "%H:%M:%S", tm);
 
-    // Format the user message
     char msg[1024];
     vsnprintf(msg, sizeof(msg), fmt, args);
 
-    // Console output with color
     fprintf(stderr, "%s[%s] [%s] %s: %s\033[0m\n",
             levelColor(level), timeStr, levelToString(level), tag, msg);
 
-    // File output (no color)
     if (g_fileLog) {
         fprintf(g_fileLog, "[%s] [%s] %s: %s\n",
                 timeStr, levelToString(level), tag, msg);
