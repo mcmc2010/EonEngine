@@ -2,6 +2,8 @@
 
 @interface AMEETime ()
 @property (nonatomic, assign) double lastTimestamp;
+@property (nonatomic, assign) double accumulatedFixedTime;
+@property (nonatomic, assign) double fixedTime;
 @end
 
 @implementation AMEETime
@@ -14,6 +16,8 @@
         _fixedDeltaTime = 1.0 / 60.0;
         _maxDeltaTime = 0.25;
         _frameCount = 0;
+        _fixedTime = 0;
+        _accumulatedFixedTime = 0;
     }
     return self;
 }
@@ -39,6 +43,12 @@
     double scaledDelta = rawDelta * self.timeScale;
     _deltaTime = scaledDelta;
     _time += scaledDelta;
+
+    _accumulatedFixedTime += scaledDelta;
+    while (_accumulatedFixedTime >= self.fixedDeltaTime) {
+        _fixedTime += self.fixedDeltaTime;
+        _accumulatedFixedTime -= self.fixedDeltaTime;
+    }
 
     _frameCount++;
 }

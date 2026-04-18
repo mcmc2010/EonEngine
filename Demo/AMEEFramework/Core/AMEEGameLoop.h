@@ -5,6 +5,7 @@
 @protocol AMEEGameLoopDelegate <NSObject>
 @optional
 - (void)gameLoopUpdate:(double)deltaTime time:(double)time;
+- (void)gameLoopFixedUpdate:(double)fixedDeltaTime;
 - (void)gameLoopRender:(double)deltaTime time:(double)time;
 @end
 

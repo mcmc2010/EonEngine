@@ -47,7 +47,6 @@ int main(int argc, const char * argv[]) {
         AMEEFramework *fw = AMEEFrameworkLoad();
         if (fw == nil) {
             throw "AMEEFramework Exception";
-            return -1;
         }
         [fw runApplicationMainWithArgc:argc argv: argv];
         return 0;

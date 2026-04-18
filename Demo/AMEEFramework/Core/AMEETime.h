@@ -20,6 +20,10 @@
 // Frame counter
 @property (nonatomic, readonly) NSUInteger frameCount;
 
+// Fixed update accumulator (for physics)
+@property (nonatomic, readonly) double fixedTime;
+@property (nonatomic, readonly) double accumulatedFixedTime;
+
 - (void)updateWithTimestamp:(double)timestamp;
 
 @end

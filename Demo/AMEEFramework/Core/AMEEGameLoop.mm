@@ -81,6 +81,11 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
     double timestamp = (double)outputTime->videoTime / (double)outputTime->videoTimeScale;
     [self.clock updateWithTimestamp:timestamp];
 
+    while ([self.clock fixedTime] > 0) {
+        if ([self.delegate respondsToSelector:@selector(gameLoopFixedUpdate:)])
+            [self.delegate gameLoopFixedUpdate:self.clock.fixedDeltaTime];
+    }
+
     if ([self.delegate respondsToSelector:@selector(gameLoopUpdate:time:)])
         [self.delegate gameLoopUpdate:self.clock.deltaTime time:self.clock.time];
 

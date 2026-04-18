@@ -1,4 +1,5 @@
 #import "GLView.h"
+#define GL_SILENCE_DEPRECATION
 #import <OpenGL/gl.h>
 #import <OpenGL/OpenGL.h>
 
