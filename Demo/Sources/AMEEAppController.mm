@@ -6,13 +6,11 @@
 #include "../AMEEFramework/Render/Shader/GL/GLShader.h"
 #include "../AMEEFramework/Core/Math/AMEEMath.h"
 #include "../AMEEFramework/Core/Log/AMEELog.h"
+#include "../AMEEFramework/Platform/macOS/MacWindow.h"
+#include "../AMEEFramework/Platform/macOS/MacGLContext.h"
+#include "../AMEEFramework/Platform/macOS/MacGameLoop.h"
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#import "../AMEEFramework/Platform/macOS/GLView.h"
-#pragma clang diagnostic pop
-
-@interface AMEEAppController () <AMEEGameLoopDelegate>
+@interface AMEEAppController () <NSApplicationDelegate>
 @end
 
 AMEEAppController* _AMEEAppController = nil;
@@ -23,6 +21,9 @@ AMEEAppController* GetAppController()
 }
 
 @implementation AMEEAppController {
+    std::unique_ptr<IPlatformWindow> _window;
+    std::unique_ptr<IPlatformGLContext> _glContext;
+    std::unique_ptr<IPlatformLoop> _gameLoop;
     std::unique_ptr<RHI> _rhi;
     std::unique_ptr<GLShaderProgram> _triangleShader;
     uint32_t _triangleVAO;
@@ -42,30 +43,48 @@ AMEEAppController* GetAppController()
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification
 {
     amee::Logger::init(amee::LogLevel::Debug);
-    
+
     [self setupMenuBar];
-    [self setupMainWindow];
 
+    // Create platform window
+    _window = std::make_unique<MacWindow>();
+    _window->create(1024, 768, "AMEE Engine (OpenGL 4.1)");
+    _window->setMinSize(320, 240);
+    _window->center();
+    _window->show();
+
+    // Create GL context on window
+    _glContext = std::make_unique<MacGLContext>();
+    if (!_glContext->create(_window->getNativeHandle())) {
+        AMEE_LOG_ERROR("App", "Failed to create GL context");
+        return;
+    }
+    _glContext->makeCurrent();
+
+    // Create RHI
     _rhi = std::make_unique<RHIOpenGL>();
-
-    [self.glView makeGLContextCurrent];
     [self setupTriangle];
 
-    self.gameLoop = [[AMEEGameLoop alloc] initWithDelegate:self];
-    [self.gameLoop start];
+    // Create game loop
+    _gameLoop = std::make_unique<MacGameLoop>();
+    _gameLoop->start([self](double dt, double time) {
+        [self renderFrame:dt time:time];
+    });
 
     AMEE_LOG_INFO("App", "Application launched with OpenGL 4.1");
 }
 
 - (void)applicationWillTerminate:(NSNotification *)aNotification
 {
-    [self.gameLoop stop];
-    [self.glView makeGLContextCurrent];
+    _gameLoop->stop();
+    _glContext->makeCurrent();
 
     _rhi->destroyVertexArray(_triangleVAO);
     _rhi->destroyVertexBuffer(_triangleVBO);
     _triangleShader.reset();
     _rhi.reset();
+    _glContext.reset();
+    _window.reset();
 
     AMEE_LOG_INFO("App", "Application terminating");
     amee::Logger::flush();
@@ -115,29 +134,6 @@ AMEEAppController* GetAppController()
                    keyEquivalent:@""];
 }
 
-- (void)setupMainWindow
-{
-    NSRect contentRect = NSMakeRect(0, 0, 1024, 768);
-    self.glView = [[GLView alloc] initWithFrame:contentRect];
-
-    NSUInteger styleMask = NSWindowStyleMaskTitled
-        | NSWindowStyleMaskClosable
-        | NSWindowStyleMaskMiniaturizable
-        | NSWindowStyleMaskResizable;
-
-    self.mainWindow = [[NSWindow alloc] initWithContentRect:contentRect
-                                                 styleMask:styleMask
-                                                   backing:NSBackingStoreBuffered
-                                                     defer:NO];
-    [self.mainWindow setContentView:self.glView];
-    self.mainWindow.title = @"AMEE Engine (OpenGL 4.1)";
-    self.mainWindow.minSize = NSMakeSize(320, 240);
-    [self.mainWindow center];
-    [self.mainWindow makeKeyAndOrderFront:nil];
-    
-    AMEE_LOG_INFO("Window", "Main window created (%dx%d)", 1024, 768);
-}
-
 - (void)setupTriangle
 {
     _triangleShader = std::make_unique<GLShaderProgram>();
@@ -178,7 +174,6 @@ AMEEAppController* GetAppController()
         return;
     }
 
-    // vertex data: x, y, z, r, g, b
     float vertices[] = {
         -0.5f, -0.5f, 0.0f,   1.0f, 0.0f, 0.0f,
          0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,
@@ -203,40 +198,31 @@ AMEEAppController* GetAppController()
     AMEE_LOG_INFO("Renderer", "Triangle shader ready (VAO=%u, VBO=%u)", _triangleVAO, _triangleVBO);
 }
 
-#pragma mark - AMEEGameLoopDelegate
+#pragma mark - Render
 
-- (void)gameLoopUpdate:(double)deltaTime time:(double)time
+- (void)renderFrame:(double)deltaTime time:(double)time
 {
-}
+    _glContext->makeCurrent();
 
-- (void)gameLoopRender:(double)deltaTime time:(double)time
-{
-    [self.glView makeGLContextCurrent];
-
-    NSSize size = [self.glView drawableSize];
-    _rhi->setViewport({0.0f, 0.0f, (float)size.width, (float)size.height});
+    int w, h;
+    _glContext->getSize(w, h);
+    _rhi->setViewport({0.0f, 0.0f, (float)w, (float)h});
 
     _rhi->setClearColor(0.15f, 0.15f, 0.2f, 1.0f);
     _rhi->clear();
 
-    // 3D rendering with MVP matrix
     float t = (float)time;
-
-    // Model: rotate around Y axis
     amee::Mat4 model = amee::Mat4::rotateY(t * 45.0f);
 
-    // View: camera at (0, 1, 3) looking at origin
     amee::Mat4 view = amee::Mat4::lookAt(
-        {0.0f, 1.0f, 3.0f},   // eye
-        {0.0f, 0.0f, 0.0f},   // center
-        {0.0f, 1.0f, 0.0f}    // up
+        {0.0f, 1.0f, 3.0f},
+        {0.0f, 0.0f, 0.0f},
+        {0.0f, 1.0f, 0.0f}
     );
 
-    // Projection: perspective
-    float aspect = size.width / size.height;
+    float aspect = (float)w / (float)h;
     amee::Mat4 proj = amee::Mat4::perspective(45.0f, aspect, 0.1f, 100.0f);
 
-    // MVP
     amee::Mat4 mvp = proj * view * model;
 
     _triangleShader->use();
@@ -246,7 +232,7 @@ AMEEAppController* GetAppController()
     _rhi->drawArrays(RHIPrimitive::Triangles, 3, 0);
     _rhi->bindVertexArray(0);
 
-    _rhi->present();
+    _glContext->swapBuffers();
 }
 
 @end

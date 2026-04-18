@@ -1,15 +1,7 @@
 #import <Cocoa/Cocoa.h>
 
-@class AMEEGameLoop;
-@class GLView;
-
 __attribute__ ((visibility("default")))
 @interface AMEEAppController : NSObject <NSApplicationDelegate>
-
-@property (nonatomic, strong) NSWindow *mainWindow;
-@property (nonatomic, strong) GLView *glView;
-@property (nonatomic, strong) AMEEGameLoop *gameLoop;
-
 @end
 
 #ifdef __cplusplus
