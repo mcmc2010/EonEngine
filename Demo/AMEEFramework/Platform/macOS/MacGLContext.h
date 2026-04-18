@@ -1,6 +1,6 @@
 #pragma once
 #import <Cocoa/Cocoa.h>
-#include "../IPlatformGLContext.h"
+#include "../../Core/Platform/IPlatformGLContext.h"
 
 @class MacGLView;
 

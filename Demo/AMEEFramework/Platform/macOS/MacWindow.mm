@@ -1,5 +1,6 @@
 #import "MacWindow.h"
 #import "../../Core/Log/AMEELog.h"
+#import "../../Core/Platform/IPlatformWindow.h"
 
 MacWindow::MacWindow()
     : _window(nullptr)

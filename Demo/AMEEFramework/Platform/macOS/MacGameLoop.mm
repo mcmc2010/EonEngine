@@ -1,5 +1,6 @@
 #import "MacGameLoop.h"
 #import "../../Core/Log/AMEELog.h"
+#include "../../Core/Platform/IPlatformLoop.h"
 
 static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
                                     const CVTimeStamp *inNow,

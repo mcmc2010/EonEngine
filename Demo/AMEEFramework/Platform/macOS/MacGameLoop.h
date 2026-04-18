@@ -1,6 +1,6 @@
 #pragma once
 #import <CoreVideo/CoreVideo.h>
-#include "../IPlatformLoop.h"
+#include "../../Core/Platform/IPlatformLoop.h"
 
 class MacGameLoop : public IPlatformLoop {
 public:

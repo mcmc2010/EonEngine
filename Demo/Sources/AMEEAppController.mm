@@ -8,6 +8,9 @@
 #include "../AMEEFramework/Platform/macOS/MacWindow.h"
 #include "../AMEEFramework/Platform/macOS/MacGLContext.h"
 #include "../AMEEFramework/Platform/macOS/MacGameLoop.h"
+#include "../AMEEFramework/Core/Platform/IPlatformWindow.h"
+#include "../AMEEFramework/Core/Platform/IPlatformGLContext.h"
+#include "../AMEEFramework/Core/Platform/IPlatformLoop.h"
 
 @interface AMEEAppController () <NSApplicationDelegate>
 @end

@@ -1,6 +1,6 @@
 #pragma once
 #import <Cocoa/Cocoa.h>
-#include "../IPlatformWindow.h"
+#include "../../Core/Platform/IPlatformWindow.h"
 
 class MacWindow : public IPlatformWindow {
 public:
