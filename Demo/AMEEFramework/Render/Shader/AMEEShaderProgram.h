@@ -1,8 +1,10 @@
 #pragma once
-#include "Shader.h"
+#include "AMEEShader.h"
 #include <string>
 #include <vector>
 #include <functional>
+
+namespace AMEE {
 
 enum class UniformType : uint8_t {
     Float,
@@ -45,3 +47,4 @@ public:
 
     virtual std::vector<UniformDesc> getUniforms() const = 0;
 };
+}

@@ -1,5 +1,7 @@
 #pragma once
-#include "../RHI.h"
+#include "../AMEERHI.h"
+
+namespace AMEE {
 
 class RHIOpenGL : public RHI {
 public:
@@ -28,3 +30,4 @@ public:
     // Draw
     void drawArrays(RHIPrimitive primitive, uint32_t count, uint32_t offset) override;
 };
+}

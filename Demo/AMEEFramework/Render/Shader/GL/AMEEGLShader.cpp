@@ -1,5 +1,7 @@
-#import "GLShader.h"
+#include "AMEEGLShader.h"
 #include <vector>
+
+namespace AMEE {
 
 GLShaderProgram::GLShaderProgram()
     : _programId(0)
@@ -195,4 +197,5 @@ std::vector<UniformDesc> GLShaderProgram::getUniforms() const
     }
 
     return result;
+}
 }

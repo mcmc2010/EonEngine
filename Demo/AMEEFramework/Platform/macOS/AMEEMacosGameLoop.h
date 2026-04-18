@@ -2,6 +2,8 @@
 #import <CoreVideo/CoreVideo.h>
 #include "../../Core/Platform/IPlatformLoop.h"
 
+using namespace AMEE;
+
 class MacGameLoop : public IPlatformLoop {
 public:
     MacGameLoop();

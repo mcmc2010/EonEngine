@@ -2,7 +2,7 @@
 #include <cmath>
 #include <cstring>
 
-namespace amee {
+namespace AMEE {
 
 // Constants
 constexpr float PI = 3.14159265358979323846f;
@@ -379,4 +379,4 @@ inline Vec3 lerp(const Vec3& a, const Vec3& b, float t) {
     return a + (b - a) * t;
 }
 
-} // namespace amee
+} // namespace AMEE

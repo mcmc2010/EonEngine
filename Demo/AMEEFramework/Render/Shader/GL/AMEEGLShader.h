@@ -1,8 +1,11 @@
 #pragma once
-#include "../ShaderProgram.h"
+#include "../AMEEShaderProgram.h"
 #define GL_SILENCE_DEPRECATION
 #include <OpenGL/gl.h>
 #include <unordered_map>
+
+namespace AMEE {
+
 
 class GLShaderProgram : public ShaderProgram {
 public:
@@ -40,3 +43,4 @@ private:
     int cacheUniformLocation(const std::string& name);
     static GLenum shaderTypeToGL(ShaderType type);
 };
+}

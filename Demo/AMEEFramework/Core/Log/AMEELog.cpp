@@ -4,7 +4,7 @@
 #include <cstdio>
 #include <cstdarg>
 
-namespace amee {
+namespace AMEE {
 
 static LogLevel g_minLevel = LogLevel::Debug;
 static FILE* g_fileLog = nullptr;
@@ -103,4 +103,4 @@ void Logger::flush() {
     }
 }
 
-} // namespace amee
+} // namespace AMEE

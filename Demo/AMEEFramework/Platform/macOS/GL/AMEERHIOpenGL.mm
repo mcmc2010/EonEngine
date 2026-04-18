@@ -1,14 +1,16 @@
-#import "RHIOpenGL.h"
+#include "AMEERHIOpenGL.h"
 #define GL_SILENCE_DEPRECATION
-#import <OpenGL/gl.h>
-#import <OpenGL/glext.h>
-#import <OpenGL/OpenGL.h>
+#include <OpenGL/gl.h>
+#include <OpenGL/glext.h>
+#include <OpenGL/OpenGL.h>
 #import <AppKit/AppKit.h>
 
 // macOS uses GL_APPLE_vertex_array_object extension
 #define glGenVertexArrays      glGenVertexArraysAPPLE
 #define glDeleteVertexArrays   glDeleteVertexArraysAPPLE
 #define glBindVertexArray      glBindVertexArrayAPPLE
+
+namespace AMEE {
 
 // Frame
 void RHIOpenGL::setClearColor(float r, float g, float b, float a)
@@ -115,4 +117,5 @@ void RHIOpenGL::drawArrays(RHIPrimitive primitive, uint32_t count, uint32_t offs
         case RHIPrimitive::Points:         glPrimitive = GL_POINTS; break;
     }
     glDrawArrays(glPrimitive, offset, count);
+}
 }

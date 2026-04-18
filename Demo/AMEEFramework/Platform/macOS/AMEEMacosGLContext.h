@@ -2,6 +2,8 @@
 #import <Cocoa/Cocoa.h>
 #include "../../Core/Platform/IPlatformGLContext.h"
 
+using namespace AMEE;
+
 @class MacGLView;
 
 class MacGLContext : public IPlatformGLContext {

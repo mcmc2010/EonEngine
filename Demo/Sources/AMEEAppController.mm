@@ -44,7 +44,7 @@ AMEEAppController* GetAppController()
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification
 {
-    amee::Logger::init(amee::LogLevel::Debug);
+    AMEE::Logger::init(AMEE::LogLevel::Debug);
 
     [self setupMenuBar];
 
@@ -89,7 +89,7 @@ AMEEAppController* GetAppController()
     _window.reset();
 
     AMEE_LOG_INFO("App", "Application terminating");
-    amee::Logger::flush();
+    AMEE::Logger::flush();
 }
 
 - (BOOL)applicationSupportsSecureRestorableState:(NSApplication *)app
@@ -214,18 +214,18 @@ AMEEAppController* GetAppController()
     _rhi->clear();
 
     float t = (float)time;
-    amee::Mat4 model = amee::Mat4::rotateY(t * 45.0f);
+    AMEE::Mat4 model = AMEE::Mat4::rotateY(t * 45.0f);
 
-    amee::Mat4 view = amee::Mat4::lookAt(
+    AMEE::Mat4 view = AMEE::Mat4::lookAt(
         {0.0f, 1.0f, 3.0f},
         {0.0f, 0.0f, 0.0f},
         {0.0f, 1.0f, 0.0f}
     );
 
     float aspect = (float)w / (float)h;
-    amee::Mat4 proj = amee::Mat4::perspective(45.0f, aspect, 0.1f, 100.0f);
+    AMEE::Mat4 proj = AMEE::Mat4::perspective(45.0f, aspect, 0.1f, 100.0f);
 
-    amee::Mat4 mvp = proj * view * model;
+    AMEE::Mat4 mvp = proj * view * model;
 
     _triangleShader->use();
     _triangleShader->setMat4("uMVP", mvp.data());

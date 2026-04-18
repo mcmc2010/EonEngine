@@ -3,7 +3,7 @@
 #include <cstdio>
 #include <string>
 
-namespace amee {
+namespace AMEE {
 
 enum class LogLevel : uint8_t {
     Debug,
@@ -37,10 +37,10 @@ public:
     static void flush();
 };
 
-} // namespace amee
+} // namespace AMEE
 
 // Convenience macros
-#define AMEE_LOG_DEBUG(tag, fmt, ...) amee::Logger::log(amee::LogLevel::Debug, tag, fmt, ##__VA_ARGS__)
-#define AMEE_LOG_INFO(tag, fmt, ...)  amee::Logger::log(amee::LogLevel::Info, tag, fmt, ##__VA_ARGS__)
-#define AMEE_LOG_WARN(tag, fmt, ...)  amee::Logger::log(amee::LogLevel::Warning, tag, fmt, ##__VA_ARGS__)
-#define AMEE_LOG_ERROR(tag, fmt, ...) amee::Logger::log(amee::LogLevel::Error, tag, fmt, ##__VA_ARGS__)
+#define AMEE_LOG_DEBUG(tag, fmt, ...) AMEE::Logger::log(amee::LogLevel::Debug, tag, fmt, ##__VA_ARGS__)
+#define AMEE_LOG_INFO(tag, fmt, ...)  AMEE::Logger::log(amee::LogLevel::Info, tag, fmt, ##__VA_ARGS__)
+#define AMEE_LOG_WARN(tag, fmt, ...)  AMEE::Logger::log(amee::LogLevel::Warning, tag, fmt, ##__VA_ARGS__)
+#define AMEE_LOG_ERROR(tag, fmt, ...) AMEE::Logger::log(amee::LogLevel::Error, tag, fmt, ##__VA_ARGS__)

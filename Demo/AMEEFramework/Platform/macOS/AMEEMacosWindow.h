@@ -2,6 +2,8 @@
 #import <Cocoa/Cocoa.h>
 #include "../../Core/Platform/IPlatformWindow.h"
 
+using namespace AMEE;
+
 class MacWindow : public IPlatformWindow {
 public:
     MacWindow();

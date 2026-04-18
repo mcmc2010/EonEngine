@@ -1,5 +1,7 @@
 #pragma once
 
+namespace AMEE {
+
 class IPlatformWindow {
 public:
     virtual ~IPlatformWindow() = default;
@@ -16,3 +18,6 @@ public:
     virtual void setMinSize(int w, int h) = 0;
     virtual void center() = 0;
 };
+
+
+} // namespace AMEE

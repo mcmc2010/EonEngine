@@ -1,5 +1,6 @@
 #pragma once
 
+namespace AMEE {
 class IPlatformGLContext {
 public:
     virtual ~IPlatformGLContext() = default;
@@ -10,3 +11,4 @@ public:
     virtual void swapBuffers() = 0;
     virtual void getSize(int& w, int& h) = 0;
 };
+} // namespace AMEE

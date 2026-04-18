@@ -1,6 +1,9 @@
 #pragma once
-#include "RHITypes.h"
+#include "AMEERHITypes.h"
 #include <cstdint>
+
+namespace AMEE {
+
 
 // Primitives
 enum class RHIPrimitive : uint8_t {
@@ -53,3 +56,4 @@ public:
     // Draw
     virtual void drawArrays(RHIPrimitive primitive, uint32_t count, uint32_t offset = 0) = 0;
 };
+}

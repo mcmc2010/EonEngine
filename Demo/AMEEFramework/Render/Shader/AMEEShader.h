@@ -2,6 +2,8 @@
 #include <cstdint>
 #include <string>
 
+namespace AMEE {
+
 enum class ShaderType : uint8_t {
     Vertex,
     Fragment,
@@ -13,3 +15,4 @@ struct ShaderCompileError {
 };
 
 using ShaderHandle = void*;
+}

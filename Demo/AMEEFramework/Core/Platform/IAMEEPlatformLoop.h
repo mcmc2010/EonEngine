@@ -1,6 +1,9 @@
 #pragma once
 #include <functional>
 
+namespace AMEE {
+
+
 class IPlatformLoop {
 public:
     using TickCallback = std::function<void(double dt, double time)>;
@@ -15,3 +18,4 @@ public:
     virtual double getTime() const = 0;
     virtual unsigned int getFrameCount() const = 0;
 };
+} // namespace AMEE
