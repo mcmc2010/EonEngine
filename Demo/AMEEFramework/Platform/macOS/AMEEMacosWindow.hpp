@@ -1,13 +1,15 @@
+#ifndef __AMEE_MACOSWINDOW_H__
+#define __AMEE_MACOSWINDOW_H__
 #pragma once
 #import <Cocoa/Cocoa.h>
-#include "../../Core/Platform/IPlatformWindow.h"
+#include "../../Core/Platform/IAMEEPlatformWindow.hpp"
 
-using namespace AMEE;
+namespace AMEE {
 
-class MacWindow : public IPlatformWindow {
+class MacosWindow : public IPlatformWindow {
 public:
-    MacWindow();
-    ~MacWindow() override;
+    MacosWindow();
+    ~MacosWindow() override;
 
     bool create(int width, int height, const char* title) override;
     void destroy() override;
@@ -21,9 +23,13 @@ public:
     void setMinSize(int w, int h) override;
     void center() override;
 
-    NSWindow* getNSWindow() const { return _window; }
+    NSWindow* getNSWindow() const { return m_pWindow; }
 
 private:
-    NSWindow* _window;
-    bool _shouldQuit;
+    NSWindow* m_pWindow;
+    bool m_ShouldQuit;
 };
+
+} // namespace AMEE
+
+#endif // __AMEE_MACOSWINDOW_H__

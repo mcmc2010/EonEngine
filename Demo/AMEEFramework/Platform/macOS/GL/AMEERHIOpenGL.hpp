@@ -1,5 +1,7 @@
+#ifndef __AMEE_RHIOPENGL_H__
+#define __AMEE_RHIOPENGL_H__
 #pragma once
-#include "../AMEERHI.h"
+#include "../../../Render/AMEERHI.hpp"
 
 namespace AMEE {
 
@@ -31,3 +33,5 @@ public:
     void drawArrays(RHIPrimitive primitive, uint32_t count, uint32_t offset) override;
 };
 }
+
+#endif // __AMEE_RHIOPENGL_H__

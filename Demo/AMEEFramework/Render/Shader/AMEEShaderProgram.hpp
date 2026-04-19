@@ -1,5 +1,7 @@
+#ifndef __AMEE_SHADERPROGRAM_H__
+#define __AMEE_SHADERPROGRAM_H__
 #pragma once
-#include "AMEEShader.h"
+#include "AMEEShader.hpp"
 #include <string>
 #include <vector>
 #include <functional>
@@ -48,3 +50,5 @@ public:
     virtual std::vector<UniformDesc> getUniforms() const = 0;
 };
 }
+
+#endif // __AMEE_SHADERPROGRAM_H__

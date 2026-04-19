@@ -21,7 +21,7 @@ extern "C" __attribute__((visibility("default"))) NSString* const kAMEEDidUnload
 extern "C" __attribute__((visibility("default"))) NSString* const kAMEEDidQuit = @"kAMEEDidQuit";
 
 #if AMEE_USES_DYNAMIC_LIBS
-static const MachHeader* g_ExecuteMachHeader = nullptr;
+static const MachHeader* g_pExecuteMachHeader = nullptr;
 
 void AMEEFunctionsForDynamicLibs()
 {
@@ -30,25 +30,25 @@ void AMEEFunctionsForDynamicLibs()
 
 void AMEESetExecuteMachHeader(const MachHeader* header)
 {
-    g_ExecuteMachHeader = header;
+    g_pExecuteMachHeader = header;
 }
 #endif
 
 @implementation AMEEFramework
 {
-    int runCount;
+    int m_RunCount;
 }
 
 
-AMEEFramework* g_pAMEEFramework = nil;
+AMEEFramework* g_pAmeeFramework = nil;
 
 + (AMEEFramework*)getInstance
 {
-    if (g_pAMEEFramework == nil)
+    if (g_pAmeeFramework == nil)
     {
-        g_pAMEEFramework = [[AMEEFramework alloc] init];
+        g_pAmeeFramework = [[AMEEFramework alloc] init];
     }
-    return g_pAMEEFramework;
+    return g_pAmeeFramework;
 }
 
 - (AMEEAppController*)getAppController
@@ -82,7 +82,7 @@ AMEEFramework* g_pAMEEFramework = nil;
 
 - (void)runApplicationMainWithArgc:(int)argc argv:(const char*[])argv
 {
-    self->runCount += 1;
+    self->m_RunCount += 1;
     [self frameworkWarmup: argc argv: argv];
 
     // Set up application programmatically (no Storyboard dependency)

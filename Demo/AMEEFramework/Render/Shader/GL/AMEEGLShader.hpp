@@ -1,5 +1,7 @@
+#ifndef __AMEE_GLSHADER_H__
+#define __AMEE_GLSHADER_H__
 #pragma once
-#include "../AMEEShaderProgram.h"
+#include "../AMEEShaderProgram.hpp"
 #define GL_SILENCE_DEPRECATION
 #include <OpenGL/gl.h>
 #include <unordered_map>
@@ -35,12 +37,14 @@ public:
     std::vector<UniformDesc> getUniforms() const override;
 
 private:
-    GLuint _programId;
-    GLuint _vertShader;
-    GLuint _fragShader;
-    std::unordered_map<std::string, int> _uniformCache;
+    GLuint m_ProgramId;
+    GLuint m_VertShader;
+    GLuint m_FragShader;
+    std::unordered_map<std::string, int> m_UniformCache;
 
     int cacheUniformLocation(const std::string& name);
     static GLenum shaderTypeToGL(ShaderType type);
 };
 }
+
+#endif // __AMEE_GLSHADER_H__

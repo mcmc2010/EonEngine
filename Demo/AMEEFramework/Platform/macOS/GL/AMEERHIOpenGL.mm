@@ -1,4 +1,4 @@
-#include "AMEERHIOpenGL.h"
+#include "AMEERHIOpenGL.hpp"
 #define GL_SILENCE_DEPRECATION
 #include <OpenGL/gl.h>
 #include <OpenGL/glext.h>

@@ -1,5 +1,6 @@
+#ifndef __AMEE_IPLATFORMGLCONTEXT_H__
+#define __AMEE_IPLATFORMGLCONTEXT_H__
 #pragma once
-
 namespace AMEE {
 class IPlatformGLContext {
 public:
@@ -12,3 +13,5 @@ public:
     virtual void getSize(int& w, int& h) = 0;
 };
 } // namespace AMEE
+
+#endif // __AMEE_IPLATFORMGLCONTEXT_H__

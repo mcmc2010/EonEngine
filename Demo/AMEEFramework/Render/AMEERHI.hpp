@@ -1,5 +1,7 @@
+#ifndef __AMEE_RHI_H__
+#define __AMEE_RHI_H__
 #pragma once
-#include "AMEERHITypes.h"
+#include "AMEERHITypes.hpp"
 #include <cstdint>
 
 namespace AMEE {
@@ -57,3 +59,5 @@ public:
     virtual void drawArrays(RHIPrimitive primitive, uint32_t count, uint32_t offset = 0) = 0;
 };
 }
+
+#endif // __AMEE_RHI_H__

@@ -4,6 +4,9 @@
 //
 //  Created by Allen Enos on 2025/11/23.
 //
+#ifndef __AMEE_FRAMEWORK_H__
+#define __AMEE_FRAMEWORK_H__
+
 #define AMEE_USES_DYNAMIC_LIBS 1
 
 #import <Foundation/Foundation.h>
@@ -26,8 +29,6 @@ FOUNDATION_EXPORT double AMEEFrameworkVersionNumber;
 FOUNDATION_EXPORT const unsigned char AMEEFrameworkVersionString[];
 
 // In this header, you should import all the public headers of your framework using statements like #import <AMEEFramework/PublicHeader.h>
-
-#pragma once
 
 // important app life-cycle events
 __attribute__ ((visibility("default")))
@@ -54,3 +55,5 @@ __attribute__ ((visibility("default")))
 - (void)runApplicationMainWithArgc:(int)argc argv:(const char*[])argv;
 
 @end
+
+#endif // __AMEE_FRAMEWORK_H__

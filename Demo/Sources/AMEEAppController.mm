@@ -1,19 +1,10 @@
 #import "AMEEAppController.h"
-#include <memory>
-#include "../AMEEFramework/Render/RHI.h"
-#include "../AMEEFramework/Render/GL/RHIOpenGL.h"
-#include "../AMEEFramework/Render/Shader/GL/GLShader.h"
-#include "../AMEEFramework/Core/Math/AMEEMath.h"
-#include "../AMEEFramework/Core/Log/AMEELog.h"
-#include "../AMEEFramework/Platform/macOS/MacWindow.h"
-#include "../AMEEFramework/Platform/macOS/MacGLContext.h"
-#include "../AMEEFramework/Platform/macOS/MacGameLoop.h"
-#include "../AMEEFramework/Core/Platform/IPlatformWindow.h"
-#include "../AMEEFramework/Core/Platform/IPlatformGLContext.h"
-#include "../AMEEFramework/Core/Platform/IPlatformLoop.h"
+#include "DemoApp.hpp"
 
 @interface AMEEAppController () <NSApplicationDelegate>
 @end
+
+static AMEE::DemoApp* g_pDemoApp = nullptr;
 
 AMEEAppController* _AMEEAppController = nil;
 
@@ -22,15 +13,7 @@ AMEEAppController* GetAppController()
     return _AMEEAppController;
 }
 
-@implementation AMEEAppController {
-    std::unique_ptr<IPlatformWindow> _window;
-    std::unique_ptr<IPlatformGLContext> _glContext;
-    std::unique_ptr<IPlatformLoop> _gameLoop;
-    std::unique_ptr<RHI> _rhi;
-    std::unique_ptr<GLShaderProgram> _triangleShader;
-    uint32_t _triangleVAO;
-    uint32_t _triangleVBO;
-}
+@implementation AMEEAppController
 
 - (id)init
 {
@@ -44,52 +27,34 @@ AMEEAppController* GetAppController()
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification
 {
-    AMEE::Logger::init(AMEE::LogLevel::Debug);
-
     [self setupMenuBar];
 
-    // Create platform window
-    _window = std::make_unique<MacWindow>();
-    _window->create(1024, 768, "AMEE Engine (OpenGL 4.1)");
-    _window->setMinSize(320, 240);
-    _window->center();
-    _window->show();
+    g_pDemoApp = new AMEE::DemoApp();
 
-    // Create GL context on window
-    _glContext = std::make_unique<MacGLContext>();
-    if (!_glContext->create(_window->getNativeHandle())) {
-        AMEE_LOG_ERROR("App", "Failed to create GL context");
+    AMEE::ApplicationConfig config;
+    config.Width = 1024;
+    config.Height = 768;
+    config.Title = "AMEE Engine (OpenGL 4.1)";
+    config.MinWidth = 320;
+    config.MinHeight = 240;
+
+    if (!g_pDemoApp->Init(config)) {
+        AMEE_LOG_ERROR("App", "Failed to initialize application");
+        delete g_pDemoApp;
+        g_pDemoApp = nullptr;
         return;
     }
-    _glContext->makeCurrent();
 
-    // Create RHI
-    _rhi = std::make_unique<RHIOpenGL>();
-    [self setupTriangle];
-
-    // Create game loop
-    _gameLoop = std::make_unique<MacGameLoop>();
-    _gameLoop->start([self](double dt, double time) {
-        [self renderFrame:dt time:time];
-    });
-
-    AMEE_LOG_INFO("App", "Application launched with OpenGL 4.1");
+    g_pDemoApp->Run();
 }
 
 - (void)applicationWillTerminate:(NSNotification *)aNotification
 {
-    _gameLoop->stop();
-    _glContext->makeCurrent();
-
-    _rhi->destroyVertexArray(_triangleVAO);
-    _rhi->destroyVertexBuffer(_triangleVBO);
-    _triangleShader.reset();
-    _rhi.reset();
-    _glContext.reset();
-    _window.reset();
-
-    AMEE_LOG_INFO("App", "Application terminating");
-    AMEE::Logger::flush();
+    if (g_pDemoApp) {
+        g_pDemoApp->Shutdown();
+        delete g_pDemoApp;
+        g_pDemoApp = nullptr;
+    }
 }
 
 - (BOOL)applicationSupportsSecureRestorableState:(NSApplication *)app
@@ -134,107 +99,6 @@ AMEEAppController* GetAppController()
     [windowMenu addItemWithTitle:@"Zoom"
                           action:@selector(performZoom:)
                    keyEquivalent:@""];
-}
-
-- (void)setupTriangle
-{
-    _triangleShader = std::make_unique<GLShaderProgram>();
-
-    const char* vs = R"(
-        #version 410 core
-        layout(location = 0) in vec3 aPos;
-        layout(location = 1) in vec3 aColor;
-        uniform mat4 uMVP;
-        out vec3 vColor;
-        void main() {
-            gl_Position = uMVP * vec4(aPos, 1.0);
-            vColor = aColor;
-        }
-    )";
-
-    const char* fs = R"(
-        #version 410 core
-        in vec3 vColor;
-        out vec4 fragColor;
-        void main() {
-            fragColor = vec4(vColor, 1.0);
-        }
-    )";
-
-    _triangleShader->compileFromSource(ShaderType::Vertex, vs, [](const ShaderCompileError& err) {
-        AMEE_LOG_ERROR("Shader", "Vertex compile error: %s", err.message.c_str());
-    });
-
-    _triangleShader->compileFromSource(ShaderType::Fragment, fs, [](const ShaderCompileError& err) {
-        AMEE_LOG_ERROR("Shader", "Fragment compile error: %s", err.message.c_str());
-    });
-
-    if (!_triangleShader->link([](const std::string& err) {
-        AMEE_LOG_ERROR("Shader", "Link error: %s", err.c_str());
-    })) {
-        AMEE_LOG_ERROR("Shader", "Failed to create triangle shader");
-        return;
-    }
-
-    float vertices[] = {
-        -0.5f, -0.5f, 0.0f,   1.0f, 0.0f, 0.0f,
-         0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,
-         0.0f,  0.5f, 0.0f,   0.0f, 0.0f, 1.0f,
-    };
-
-    _triangleVAO = _rhi->createVertexArray();
-    _triangleVBO = _rhi->createVertexBuffer(vertices, sizeof(vertices));
-
-    _rhi->bindVertexArray(_triangleVAO);
-    _rhi->bindVertexBuffer(_triangleVBO);
-
-    _rhi->enableVertexAttribArray(0);
-    _rhi->vertexAttribPointer(0, 3, RHIDataType::Float, false, 6 * sizeof(float), (void*)0);
-
-    _rhi->enableVertexAttribArray(1);
-    _rhi->vertexAttribPointer(1, 3, RHIDataType::Float, false, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-
-    _rhi->bindVertexArray(0);
-    _rhi->bindVertexBuffer(0);
-
-    AMEE_LOG_INFO("Renderer", "Triangle shader ready (VAO=%u, VBO=%u)", _triangleVAO, _triangleVBO);
-}
-
-#pragma mark - Render
-
-- (void)renderFrame:(double)deltaTime time:(double)time
-{
-    _glContext->makeCurrent();
-
-    int w, h;
-    _glContext->getSize(w, h);
-    _rhi->setViewport({0.0f, 0.0f, (float)w, (float)h});
-
-    _rhi->setClearColor(0.15f, 0.15f, 0.2f, 1.0f);
-    _rhi->clear();
-
-    float t = (float)time;
-    AMEE::Mat4 model = AMEE::Mat4::rotateY(t * 45.0f);
-
-    AMEE::Mat4 view = AMEE::Mat4::lookAt(
-        {0.0f, 1.0f, 3.0f},
-        {0.0f, 0.0f, 0.0f},
-        {0.0f, 1.0f, 0.0f}
-    );
-
-    float aspect = (float)w / (float)h;
-    AMEE::Mat4 proj = AMEE::Mat4::perspective(45.0f, aspect, 0.1f, 100.0f);
-
-    AMEE::Mat4 mvp = proj * view * model;
-
-    _triangleShader->use();
-    _triangleShader->setMat4("uMVP", mvp.data());
-
-    _rhi->bindVertexArray(_triangleVAO);
-    _rhi->drawArrays(RHIPrimitive::Triangles, 3, 0);
-    _rhi->bindVertexArray(0);
-
-    _glContext->swapBuffers();
 }
 
 @end

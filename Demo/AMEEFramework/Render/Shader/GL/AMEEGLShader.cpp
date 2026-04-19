@@ -1,14 +1,14 @@
-#include "AMEEGLShader.h"
+#include "AMEEGLShader.hpp"
 #include <vector>
 
 namespace AMEE {
 
 GLShaderProgram::GLShaderProgram()
-    : _programId(0)
-    , _vertShader(0)
-    , _fragShader(0)
+    : m_ProgramId(0)
+    , m_VertShader(0)
+    , m_FragShader(0)
 {
-    _programId = glCreateProgram();
+    m_ProgramId = glCreateProgram();
 }
 
 GLShaderProgram::~GLShaderProgram()
@@ -53,12 +53,12 @@ bool GLShaderProgram::compileFromSource(
 
     switch (type) {
         case ShaderType::Vertex:
-            if (_vertShader) glDeleteShader(_vertShader);
-            _vertShader = shader;
+            if (m_VertShader) glDeleteShader(m_VertShader);
+            m_VertShader = shader;
             break;
         case ShaderType::Fragment:
-            if (_fragShader) glDeleteShader(_fragShader);
-            _fragShader = shader;
+            if (m_FragShader) glDeleteShader(m_FragShader);
+            m_FragShader = shader;
             break;
     }
 
@@ -67,73 +67,73 @@ bool GLShaderProgram::compileFromSource(
 
 bool GLShaderProgram::link(std::function<void(const std::string&)> onError)
 {
-    if (!_vertShader || !_fragShader) {
+    if (!m_VertShader || !m_FragShader) {
         if (onError) onError("Missing vertex or fragment shader");
         return false;
     }
 
-    glAttachShader(_programId, _vertShader);
-    glAttachShader(_programId, _fragShader);
-    glLinkProgram(_programId);
+    glAttachShader(m_ProgramId, m_VertShader);
+    glAttachShader(m_ProgramId, m_FragShader);
+    glLinkProgram(m_ProgramId);
 
     GLint success = 0;
-    glGetProgramiv(_programId, GL_LINK_STATUS, &success);
+    glGetProgramiv(m_ProgramId, GL_LINK_STATUS, &success);
     if (!success) {
         GLint logLen = 0;
-        glGetProgramiv(_programId, GL_INFO_LOG_LENGTH, &logLen);
+        glGetProgramiv(m_ProgramId, GL_INFO_LOG_LENGTH, &logLen);
         std::vector<GLchar> log(logLen);
-        glGetProgramInfoLog(_programId, logLen, nullptr, log.data());
+        glGetProgramInfoLog(m_ProgramId, logLen, nullptr, log.data());
 
         if (onError) onError(log.data());
         return false;
     }
 
-    _uniformCache.clear();
+    m_UniformCache.clear();
     return true;
 }
 
 void GLShaderProgram::use()
 {
-    glUseProgram(_programId);
+    glUseProgram(m_ProgramId);
 }
 
 void GLShaderProgram::destroy()
 {
-    if (_vertShader) {
-        glDeleteShader(_vertShader);
-        _vertShader = 0;
+    if (m_VertShader) {
+        glDeleteShader(m_VertShader);
+        m_VertShader = 0;
     }
-    if (_fragShader) {
-        glDeleteShader(_fragShader);
-        _fragShader = 0;
+    if (m_FragShader) {
+        glDeleteShader(m_FragShader);
+        m_FragShader = 0;
     }
-    if (_programId) {
-        glDeleteProgram(_programId);
-        _programId = 0;
+    if (m_ProgramId) {
+        glDeleteProgram(m_ProgramId);
+        m_ProgramId = 0;
     }
-    _uniformCache.clear();
+    m_UniformCache.clear();
 }
 
 int GLShaderProgram::cacheUniformLocation(const std::string& name)
 {
-    auto it = _uniformCache.find(name);
-    if (it != _uniformCache.end()) return it->second;
+    auto it = m_UniformCache.find(name);
+    if (it != m_UniformCache.end()) return it->second;
 
-    int loc = glGetUniformLocation(_programId, name.c_str());
-    _uniformCache[name] = loc;
+    int loc = glGetUniformLocation(m_ProgramId, name.c_str());
+    m_UniformCache[name] = loc;
     return loc;
 }
 
 bool GLShaderProgram::hasUniform(const std::string& name) const
 {
-    return glGetUniformLocation(_programId, name.c_str()) != -1;
+    return glGetUniformLocation(m_ProgramId, name.c_str()) != -1;
 }
 
 int GLShaderProgram::getUniformLocation(const std::string& name) const
 {
-    auto it = _uniformCache.find(name);
-    if (it != _uniformCache.end()) return it->second;
-    return glGetUniformLocation(_programId, name.c_str());
+    auto it = m_UniformCache.find(name);
+    if (it != m_UniformCache.end()) return it->second;
+    return glGetUniformLocation(m_ProgramId, name.c_str());
 }
 
 void GLShaderProgram::setFloat(const std::string& name, float v)
@@ -171,17 +171,17 @@ std::vector<UniformDesc> GLShaderProgram::getUniforms() const
     std::vector<UniformDesc> result;
 
     GLint count = 0;
-    glGetProgramiv(_programId, GL_ACTIVE_UNIFORMS, &count);
+    glGetProgramiv(m_ProgramId, GL_ACTIVE_UNIFORMS, &count);
 
     for (int i = 0; i < count; i++) {
         GLchar name[256];
         GLint size;
         GLenum type;
-        glGetActiveUniform(_programId, i, sizeof(name), nullptr, &size, &type, name);
+        glGetActiveUniform(m_ProgramId, i, sizeof(name), nullptr, &size, &type, name);
 
         UniformDesc desc;
         desc.name = name;
-        desc.location = glGetUniformLocation(_programId, name);
+        desc.location = glGetUniformLocation(m_ProgramId, name);
 
         switch (type) {
             case GL_FLOAT:         desc.type = UniformType::Float; break;

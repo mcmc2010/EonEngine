@@ -1,3 +1,5 @@
+#ifndef __AMEE_IPLATFORMLOOP_H__
+#define __AMEE_IPLATFORMLOOP_H__
 #pragma once
 #include <functional>
 
@@ -19,3 +21,5 @@ public:
     virtual unsigned int getFrameCount() const = 0;
 };
 } // namespace AMEE
+
+#endif // __AMEE_IPLATFORMLOOP_H__

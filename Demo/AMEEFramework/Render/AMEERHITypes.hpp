@@ -1,5 +1,6 @@
+#ifndef __AMEE_RHITYPES_H__
+#define __AMEE_RHITYPES_H__
 #pragma once
-
 namespace AMEE {
 
 struct RHIViewport {
@@ -10,3 +11,5 @@ struct RHIViewport {
 };
 
 }
+
+#endif // __AMEE_RHITYPES_H__

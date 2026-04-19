@@ -1,3 +1,5 @@
+#ifndef __AMEE_MATH_H__
+#define __AMEE_MATH_H__
 #pragma once
 #include <cmath>
 #include <cstring>
@@ -31,15 +33,15 @@ struct Vec2 {
     Vec2& operator-=(const Vec2& r) { x -= r.x; y -= r.y; return *this; }
     Vec2& operator*=(float s) { x *= s; y *= s; return *this; }
 
-    float length() const { return std::sqrt(x * x + y * y); }
-    float lengthSq() const { return x * x + y * y; }
+    float Length() const { return std::sqrt(x * x + y * y); }
+    float LengthSq() const { return x * x + y * y; }
 
-    Vec2 normalized() const {
-        float len = length();
+    Vec2 Normalized() const {
+        float len = Length();
         return len > 0 ? *this / len : Vec2(0);
     }
 
-    static float dot(const Vec2& a, const Vec2& b) {
+    static float Dot(const Vec2& a, const Vec2& b) {
         return a.x * b.x + a.y * b.y;
     }
 };
@@ -67,19 +69,19 @@ struct Vec3 {
     Vec3& operator-=(const Vec3& r) { x -= r.x; y -= r.y; z -= r.z; return *this; }
     Vec3& operator*=(float s) { x *= s; y *= s; z *= s; return *this; }
 
-    float length() const { return std::sqrt(x * x + y * y + z * z); }
-    float lengthSq() const { return x * x + y * y + z * z; }
+    float Length() const { return std::sqrt(x * x + y * y + z * z); }
+    float LengthSq() const { return x * x + y * y + z * z; }
 
-    Vec3 normalized() const {
-        float len = length();
+    Vec3 Normalized() const {
+        float len = Length();
         return len > 0 ? *this / len : Vec3(0);
     }
 
-    static float dot(const Vec3& a, const Vec3& b) {
+    static float Dot(const Vec3& a, const Vec3& b) {
         return a.x * b.x + a.y * b.y + a.z * b.z;
     }
 
-    static Vec3 cross(const Vec3& a, const Vec3& b) {
+    static Vec3 Cross(const Vec3& a, const Vec3& b) {
         return {
             a.y * b.z - a.z * b.y,
             a.z * b.x - a.x * b.z,
@@ -106,7 +108,7 @@ struct Vec4 {
     Vec4 operator*(float s) const { return {x * s, y * s, z * s, w * s}; }
     Vec4 operator/(float s) const { float inv = 1.0f / s; return {x * inv, y * inv, z * inv, w * inv}; }
 
-    float dot(const Vec4& r) const { return x * r.x + y * r.y + z * r.z + w * r.w; }
+    float Dot(const Vec4& r) const { return x * r.x + y * r.y + z * r.z + w * r.w; }
 
     Vec3 xyz() const { return {x, y, z}; }
     Vec2 xy() const { return {x, y}; }
@@ -123,7 +125,7 @@ struct Mat4 {
     Mat4() { std::memset(m, 0, sizeof(m)); }
 
     // Identity matrix
-    static Mat4 identity() {
+    static Mat4 Identity() {
         Mat4 result;
         result.m[0] = result.m[5] = result.m[10] = result.m[15] = 1.0f;
         return result;
@@ -138,7 +140,7 @@ struct Mat4 {
     const float& at(int col, int row) const { return m[col * 4 + row]; }
 
     // Get raw pointer for OpenGL
-    const float* data() const { return m; }
+    const float* Data() const { return m; }
 
     // Matrix multiplication
     Mat4 operator*(const Mat4& r) const {
@@ -166,13 +168,13 @@ struct Mat4 {
     }
 
     // Transform Vec3 (w=1)
-    Vec3 transformPoint(const Vec3& v) const {
+    Vec3 TransformPoint(const Vec3& v) const {
         Vec4 r = *this * Vec4(v, 1.0f);
         return {r.x / r.w, r.y / r.w, r.z / r.w};
     }
 
     // Transform Vec3 direction (w=0)
-    Vec3 transformDir(const Vec3& v) const {
+    Vec3 TransformDir(const Vec3& v) const {
         Vec4 r = *this * Vec4(v, 0.0f);
         return {r.x, r.y, r.z};
     }
@@ -182,8 +184,8 @@ struct Mat4 {
     // =========================================================================
 
     // Translation matrix
-    static Mat4 translate(const Vec3& t) {
-        Mat4 result = identity();
+    static Mat4 Translate(const Vec3& t) {
+        Mat4 result = Identity();
         result.at(3, 0) = t.x;
         result.at(3, 1) = t.y;
         result.at(3, 2) = t.z;
@@ -191,8 +193,8 @@ struct Mat4 {
     }
 
     // Scale matrix
-    static Mat4 scale(const Vec3& s) {
-        Mat4 result = identity();
+    static Mat4 Scale(const Vec3& s) {
+        Mat4 result = Identity();
         result.at(0, 0) = s.x;
         result.at(1, 1) = s.y;
         result.at(2, 2) = s.z;
@@ -200,16 +202,16 @@ struct Mat4 {
     }
 
     // Rotation around arbitrary axis
-    static Mat4 rotate(float angleDeg, const Vec3& axis) {
-        float rad = angleDeg * DEG2RAD;
+    static Mat4 rotate(float AngleDeg, const Vec3& axis) {
+        float rad = AngleDeg * DEG2RAD;
         float c = std::cos(rad);
         float s = std::sin(rad);
         float t = 1.0f - c;
 
-        Vec3 a = axis.normalized();
+        Vec3 a = axis.Normalized();
         float x = a.x, y = a.y, z = a.z;
 
-        Mat4 result = identity();
+        Mat4 result = Identity();
         result.at(0, 0) = t*x*x + c;
         result.at(0, 1) = t*x*y + s*z;
         result.at(0, 2) = t*x*z - s*y;
@@ -226,11 +228,11 @@ struct Mat4 {
     }
 
     // Rotation around X axis
-    static Mat4 rotateX(float angleDeg) {
-        float rad = angleDeg * DEG2RAD;
+    static Mat4 RotateX(float AngleDeg) {
+        float rad = AngleDeg * DEG2RAD;
         float c = std::cos(rad);
         float s = std::sin(rad);
-        Mat4 result = identity();
+        Mat4 result = Identity();
         result.at(1, 1) = c;
         result.at(1, 2) = s;
         result.at(2, 1) = -s;
@@ -239,11 +241,11 @@ struct Mat4 {
     }
 
     // Rotation around Y axis
-    static Mat4 rotateY(float angleDeg) {
-        float rad = angleDeg * DEG2RAD;
+    static Mat4 RotateY(float AngleDeg) {
+        float rad = AngleDeg * DEG2RAD;
         float c = std::cos(rad);
         float s = std::sin(rad);
-        Mat4 result = identity();
+        Mat4 result = Identity();
         result.at(0, 0) = c;
         result.at(0, 2) = -s;
         result.at(2, 0) = s;
@@ -252,11 +254,11 @@ struct Mat4 {
     }
 
     // Rotation around Z axis
-    static Mat4 rotateZ(float angleDeg) {
-        float rad = angleDeg * DEG2RAD;
+    static Mat4 RotateZ(float AngleDeg) {
+        float rad = AngleDeg * DEG2RAD;
         float c = std::cos(rad);
         float s = std::sin(rad);
-        Mat4 result = identity();
+        Mat4 result = Identity();
         result.at(0, 0) = c;
         result.at(0, 1) = s;
         result.at(1, 0) = -s;
@@ -264,12 +266,12 @@ struct Mat4 {
         return result;
     }
 
-    // Perspective projection (FOV in degrees)
-    static Mat4 perspective(float fovDeg, float aspect, float near, float far) {
-        float tanHalf = std::tan(fovDeg * DEG2RAD * 0.5f);
+    // Perspective projection (FOV in Degrees)
+    static Mat4 Perspective(float FovDeg, float aspect, float near, float far) {
+        float TanHalf = std::tan(FovDeg * DEG2RAD * 0.5f);
         Mat4 result;
-        result.at(0, 0) = 1.0f / (aspect * tanHalf);
-        result.at(1, 1) = 1.0f / tanHalf;
+        result.at(0, 0) = 1.0f / (aspect * TanHalf);
+        result.at(1, 1) = 1.0f / TanHalf;
         result.at(2, 2) = -(far + near) / (far - near);
         result.at(2, 3) = -1.0f;
         result.at(3, 2) = -(2.0f * far * near) / (far - near);
@@ -277,8 +279,8 @@ struct Mat4 {
     }
 
     // Orthographic projection
-    static Mat4 ortho(float left, float right, float bottom, float top, float near, float far) {
-        Mat4 result = identity();
+    static Mat4 Ortho(float left, float right, float bottom, float top, float near, float far) {
+        Mat4 result = Identity();
         result.at(0, 0) = 2.0f / (right - left);
         result.at(1, 1) = 2.0f / (top - bottom);
         result.at(2, 2) = -2.0f / (far - near);
@@ -289,12 +291,12 @@ struct Mat4 {
     }
 
     // View matrix (look at)
-    static Mat4 lookAt(const Vec3& eye, const Vec3& center, const Vec3& up) {
-        Vec3 f = (center - eye).normalized();
-        Vec3 s = Vec3::cross(f, up).normalized();
-        Vec3 u = Vec3::cross(s, f);
+    static Mat4 LookAt(const Vec3& eye, const Vec3& center, const Vec3& up) {
+        Vec3 f = (center - eye).Normalized();
+        Vec3 s = Vec3::Cross(f, up).Normalized();
+        Vec3 u = Vec3::Cross(s, f);
 
-        Mat4 result = identity();
+        Mat4 result = Identity();
         result.at(0, 0) = s.x;
         result.at(0, 1) = u.x;
         result.at(0, 2) = -f.x;
@@ -307,15 +309,15 @@ struct Mat4 {
         result.at(2, 1) = u.z;
         result.at(2, 2) = -f.z;
 
-        result.at(3, 0) = -Vec3::dot(s, eye);
-        result.at(3, 1) = -Vec3::dot(u, eye);
-        result.at(3, 2) = Vec3::dot(f, eye);
+        result.at(3, 0) = -Vec3::Dot(s, eye);
+        result.at(3, 1) = -Vec3::Dot(u, eye);
+        result.at(3, 2) = Vec3::Dot(f, eye);
 
         return result;
     }
 
     // Transpose
-    Mat4 transposed() const {
+    Mat4 Transposed() const {
         Mat4 result;
         for (int i = 0; i < 4; i++)
             for (int j = 0; j < 4; j++)
@@ -325,7 +327,7 @@ struct Mat4 {
 
     // Simple inverse for transformation matrices (rotation + translation)
     // Not a general matrix inverse
-    Mat4 inverseTransform() const {
+    Mat4 InverseTransform() const {
         Mat4 result;
 
         // Transpose of rotation part
@@ -352,31 +354,33 @@ struct Mat4 {
     }
 
     // Translate * Rotate * Scale (TRS)
-    static Mat4 trs(const Vec3& position, const Vec3& eulerDeg, const Vec3& scale) {
-        return translate(position)
-             * rotateZ(eulerDeg.z)
-             * rotateY(eulerDeg.y)
-             * rotateX(eulerDeg.x)
-             * Mat4::scale(scale);
+    static Mat4 Trs(const Vec3& position, const Vec3& EulerDeg, const Vec3& Scale) {
+        return Translate(position)
+             * RotateZ(EulerDeg.z)
+             * RotateY(EulerDeg.y)
+             * RotateX(EulerDeg.x)
+             * Mat4::Scale(Scale);
     }
 };
 
 // =========================================================================
 // Utility
 // =========================================================================
-inline float radians(float deg) { return deg * DEG2RAD; }
-inline float degrees(float rad) { return rad * RAD2DEG; }
+inline float Radians(float deg) { return deg * DEG2RAD; }
+inline float Degrees(float rad) { return rad * RAD2DEG; }
 
-inline float clamp(float v, float min, float max) {
+inline float Clamp(float v, float min, float max) {
     return v < min ? min : (v > max ? max : v);
 }
 
-inline float lerp(float a, float b, float t) {
+inline float Lerp(float a, float b, float t) {
     return a + (b - a) * t;
 }
 
-inline Vec3 lerp(const Vec3& a, const Vec3& b, float t) {
+inline Vec3 Lerp(const Vec3& a, const Vec3& b, float t) {
     return a + (b - a) * t;
 }
 
 } // namespace AMEE
+
+#endif // __AMEE_MATH_H__

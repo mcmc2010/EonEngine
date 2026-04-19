@@ -1,3 +1,5 @@
+#ifndef __AMEE_IPLATFORMWINDOW_H__
+#define __AMEE_IPLATFORMWINDOW_H__
 #pragma once
 
 namespace AMEE {
@@ -21,3 +23,5 @@ public:
 
 
 } // namespace AMEE
+
+#endif // __AMEE_IPLATFORMWINDOW_H__

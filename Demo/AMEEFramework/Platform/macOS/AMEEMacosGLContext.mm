@@ -1,9 +1,9 @@
-#import "MacGLContext.h"
+#import "AMEEMacosGLContext.hpp"
 #define GL_SILENCE_DEPRECATION
 #import <OpenGL/gl.h>
 #import <OpenGL/OpenGL.h>
-#import "../../Core/Log/AMEELog.h"
-#include "../../Core/Platform/IPlatformGLContext.h"
+#import "../../Core/Log/AMEELog.hpp"
+#include "../../Core/Platform/IAMEEPlatformGLContext.hpp"
 
 @interface MacGLView : NSOpenGLView
 @end
@@ -49,76 +49,80 @@
 }
 @end
 
-MacGLContext::MacGLContext()
-    : _glView(nullptr)
-    , _context(nullptr)
-    , _window(nullptr)
+namespace AMEE {
+
+MacosGLContext::MacosGLContext()
+    : m_pGlView(nullptr)
+    , m_pContext(nullptr)
+    , m_pWindow(nullptr)
 {
 }
 
-MacGLContext::~MacGLContext()
+MacosGLContext::~MacosGLContext()
 {
     destroy();
 }
 
-bool MacGLContext::create(void* windowHandle)
+bool MacosGLContext::create(void* windowHandle)
 {
     NSWindow* window = (__bridge NSWindow*)windowHandle;
     if (!window) {
-        AMEE_LOG_ERROR("MacGLContext", "Invalid window handle");
+        AMEE_LOG_ERROR("MacosGLContext", "Invalid window handle");
         return false;
     }
 
-    _window = window;
+    m_pWindow = window;
 
     NSRect frame = [[window contentView] bounds];
-    _glView = [[MacGLView alloc] initWithFrame:frame];
-    if (!_glView) {
-        AMEE_LOG_ERROR("MacGLContext", "Failed to create OpenGL view");
+    m_pGlView = [[MacGLView alloc] initWithFrame:frame];
+    if (!m_pGlView) {
+        AMEE_LOG_ERROR("MacosGLContext", "Failed to create OpenGL view");
         return false;
     }
 
-    [window setContentView:_glView];
-    [_glView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
+    [window setContentView:m_pGlView];
+    [m_pGlView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
 
-    _context = [_glView openGLContext];
-    if (!_context) {
-        AMEE_LOG_ERROR("MacGLContext", "Failed to get OpenGL context");
+    m_pContext = [m_pGlView openGLContext];
+    if (!m_pContext) {
+        AMEE_LOG_ERROR("MacosGLContext", "Failed to get OpenGL context");
         return false;
     }
 
-    AMEE_LOG_INFO("MacGLContext", "OpenGL 4.1 context created");
+    AMEE_LOG_INFO("MacosGLContext", "OpenGL 4.1 context created");
     return true;
 }
 
-void MacGLContext::destroy()
+void MacosGLContext::destroy()
 {
-    _glView = nullptr;
-    _context = nullptr;
-    _window = nullptr;
+    m_pGlView = nullptr;
+    m_pContext = nullptr;
+    m_pWindow = nullptr;
 }
 
-void MacGLContext::makeCurrent()
+void MacosGLContext::makeCurrent()
 {
-    if (_context) {
-        [_context makeCurrentContext];
+    if (m_pContext) {
+        [m_pContext makeCurrentContext];
     }
 }
 
-void MacGLContext::swapBuffers()
+void MacosGLContext::swapBuffers()
 {
-    if (_context) {
-        [_context flushBuffer];
+    if (m_pContext) {
+        [m_pContext flushBuffer];
     }
 }
 
-void MacGLContext::getSize(int& w, int& h)
+void MacosGLContext::getSize(int& w, int& h)
 {
-    if (_glView) {
-        NSSize size = [_glView drawableSize];
+    if (m_pGlView) {
+        NSSize size = [m_pGlView drawableSize];
         w = (int)size.width;
         h = (int)size.height;
     } else {
         w = h = 0;
     }
 }
+
+} // namespace AMEE

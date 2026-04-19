@@ -1,19 +1,21 @@
-#import "MacWindow.h"
-#import "../../Core/Log/AMEELog.h"
-#import "../../Core/Platform/IPlatformWindow.h"
+#import "AMEEMacosWindow.hpp"
+#import "../../Core/Log/AMEELog.hpp"
+#import "../../Core/Platform/IAMEEPlatformWindow.hpp"
 
-MacWindow::MacWindow()
-    : _window(nullptr)
-    , _shouldQuit(false)
+namespace AMEE {
+
+MacosWindow::MacosWindow()
+    : m_pWindow(nullptr)
+    , m_ShouldQuit(false)
 {
 }
 
-MacWindow::~MacWindow()
+MacosWindow::~MacosWindow()
 {
     destroy();
 }
 
-bool MacWindow::create(int width, int height, const char* title)
+bool MacosWindow::create(int width, int height, const char* title)
 {
     NSRect contentRect = NSMakeRect(0, 0, width, height);
     NSUInteger styleMask = NSWindowStyleMaskTitled
@@ -21,44 +23,44 @@ bool MacWindow::create(int width, int height, const char* title)
         | NSWindowStyleMaskMiniaturizable
         | NSWindowStyleMaskResizable;
 
-    _window = [[NSWindow alloc] initWithContentRect:contentRect
+    m_pWindow = [[NSWindow alloc] initWithContentRect:contentRect
                                           styleMask:styleMask
                                             backing:NSBackingStoreBuffered
                                               defer:NO];
-    if (!_window) {
-        AMEE_LOG_ERROR("MacWindow", "Failed to create NSWindow");
+    if (!m_pWindow) {
+        AMEE_LOG_ERROR("MacosWindow", "Failed to create NSWindow");
         return false;
     }
 
     NSString* nsTitle = [NSString stringWithUTF8String:title];
-    [_window setTitle:nsTitle];
-    [_window setAcceptsMouseMovedEvents:YES];
-    [_window setRestorable:NO];
+    [m_pWindow setTitle:nsTitle];
+    [m_pWindow setAcceptsMouseMovedEvents:YES];
+    [m_pWindow setRestorable:NO];
 
-    AMEE_LOG_INFO("MacWindow", "Window created (%dx%d)", width, height);
+    AMEE_LOG_INFO("MacosWindow", "Window created (%dx%d)", width, height);
     return true;
 }
 
-void MacWindow::destroy()
+void MacosWindow::destroy()
 {
-    if (_window) {
-        [_window close];
-        _window = nullptr;
+    if (m_pWindow) {
+        [m_pWindow close];
+        m_pWindow = nullptr;
     }
 }
 
-void MacWindow::setSize(int w, int h)
+void MacosWindow::setSize(int w, int h)
 {
-    if (_window) {
+    if (m_pWindow) {
         NSSize size = NSMakeSize(w, h);
-        [_window setContentSize:size];
+        [m_pWindow setContentSize:size];
     }
 }
 
-void MacWindow::getSize(int& w, int& h)
+void MacosWindow::getSize(int& w, int& h)
 {
-    if (_window) {
-        NSSize size = [_window frame].size;
+    if (m_pWindow) {
+        NSSize size = [m_pWindow frame].size;
         w = (int)size.width;
         h = (int)size.height;
     } else {
@@ -66,27 +68,27 @@ void MacWindow::getSize(int& w, int& h)
     }
 }
 
-void MacWindow::setTitle(const char* title)
+void MacosWindow::setTitle(const char* title)
 {
-    if (_window) {
+    if (m_pWindow) {
         NSString* nsTitle = [NSString stringWithUTF8String:title];
-        [_window setTitle:nsTitle];
+        [m_pWindow setTitle:nsTitle];
     }
 }
 
-void MacWindow::show()
+void MacosWindow::show()
 {
-    if (_window) {
-        [_window makeKeyAndOrderFront:nil];
+    if (m_pWindow) {
+        [m_pWindow makeKeyAndOrderFront:nil];
     }
 }
 
-void* MacWindow::getNativeHandle()
+void* MacosWindow::getNativeHandle()
 {
-    return (__bridge void*)_window;
+    return (__bridge void*)m_pWindow;
 }
 
-bool MacWindow::pollEvents()
+bool MacosWindow::pollEvents()
 {
     NSEvent* event;
     while ((event = [NSApp nextEventMatchingMask:NSEventMaskAny
@@ -96,22 +98,24 @@ bool MacWindow::pollEvents()
         [NSApp sendEvent:event];
 
         if ([event type] == NSEventTypeApplicationDefined && [event subtype] == 99) {
-            _shouldQuit = true;
+            m_ShouldQuit = true;
         }
     }
-    return !_shouldQuit;
+    return !m_ShouldQuit;
 }
 
-void MacWindow::setMinSize(int w, int h)
+void MacosWindow::setMinSize(int w, int h)
 {
-    if (_window) {
-        [_window setMinSize:NSMakeSize(w, h)];
+    if (m_pWindow) {
+        [m_pWindow setMinSize:NSMakeSize(w, h)];
     }
 }
 
-void MacWindow::center()
+void MacosWindow::center()
 {
-    if (_window) {
-        [_window center];
+    if (m_pWindow) {
+        [m_pWindow center];
     }
 }
+
+} // namespace AMEE

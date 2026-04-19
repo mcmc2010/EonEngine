@@ -1,3 +1,5 @@
+#ifndef __AMEE_LOG_H__
+#define __AMEE_LOG_H__
 #pragma once
 #include <cstdarg>
 #include <cstdio>
@@ -37,10 +39,12 @@ public:
     static void flush();
 };
 
+// Convenience macros
+#define AMEE_LOG_DEBUG(tag, fmt, ...) AMEE::Logger::log(AMEE::LogLevel::Debug, tag, fmt, ##__VA_ARGS__)
+#define AMEE_LOG_INFO(tag, fmt, ...)  AMEE::Logger::log(AMEE::LogLevel::Info, tag, fmt, ##__VA_ARGS__)
+#define AMEE_LOG_WARN(tag, fmt, ...)  AMEE::Logger::log(AMEE::LogLevel::Warning, tag, fmt, ##__VA_ARGS__)
+#define AMEE_LOG_ERROR(tag, fmt, ...) AMEE::Logger::log(AMEE::LogLevel::Error, tag, fmt, ##__VA_ARGS__)
+
 } // namespace AMEE
 
-// Convenience macros
-#define AMEE_LOG_DEBUG(tag, fmt, ...) AMEE::Logger::log(amee::LogLevel::Debug, tag, fmt, ##__VA_ARGS__)
-#define AMEE_LOG_INFO(tag, fmt, ...)  AMEE::Logger::log(amee::LogLevel::Info, tag, fmt, ##__VA_ARGS__)
-#define AMEE_LOG_WARN(tag, fmt, ...)  AMEE::Logger::log(amee::LogLevel::Warning, tag, fmt, ##__VA_ARGS__)
-#define AMEE_LOG_ERROR(tag, fmt, ...) AMEE::Logger::log(amee::LogLevel::Error, tag, fmt, ##__VA_ARGS__)
+#endif // __AMEE_LOG_H__

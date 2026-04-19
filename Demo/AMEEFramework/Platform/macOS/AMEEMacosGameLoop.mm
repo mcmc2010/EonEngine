@@ -1,6 +1,6 @@
-#import "MacGameLoop.h"
-#import "../../Core/Log/AMEELog.h"
-#include "../../Core/Platform/IPlatformLoop.h"
+#import "AMEEMacosGameLoop.hpp"
+#import "../../Core/Log/AMEELog.hpp"
+#include "../../Core/Platform/IAMEEPlatformLoop.hpp"
 
 static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
                                     const CVTimeStamp *inNow,
@@ -9,34 +9,36 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
                                     CVOptionFlags *flagsOut,
                                     void *displayLinkContext);
 
-MacGameLoop::MacGameLoop()
-    : _displayLink(nullptr)
-    , _lastTimestamp(0)
-    , _deltaTime(0)
-    , _time(0)
-    , _frameCount(0)
-    , _fixedDeltaTime(1.0 / 60.0)
-    , _maxDeltaTime(0.25)
-    , _accumulatedFixedTime(0)
-    , _fixedTime(0)
+namespace AMEE {
+
+MacosGameLoop::MacosGameLoop()
+    : m_DisplayLink(nullptr)
+    , m_LastTimestamp(0)
+    , m_DeltaTime(0)
+    , m_Time(0)
+    , m_FrameCount(0)
+    , m_FixedDeltaTime(1.0 / 60.0)
+    , m_MaxDeltaTime(0.25)
+    , m_AccumulatedFixedTime(0)
+    , m_FixedTime(0)
 {
 }
 
-MacGameLoop::~MacGameLoop()
+MacosGameLoop::~MacosGameLoop()
 {
     stop();
 }
 
-bool MacGameLoop::start(TickCallback callback)
+bool MacosGameLoop::start(TickCallback callback)
 {
     if (isRunning()) return false;
 
-    _callback = std::move(callback);
+    m_Callback = std::move(callback);
 
     CVDisplayLinkRef displayLink = nullptr;
     CVReturn status = CVDisplayLinkCreateWithCGDisplay(CGMainDisplayID(), &displayLink);
     if (status != kCVReturnSuccess) {
-        AMEE_LOG_ERROR("MacGameLoop", "Failed to create CVDisplayLink: %d", status);
+        AMEE_LOG_ERROR("MacosGameLoop", "Failed to create CVDisplayLink: %d", status);
         return false;
     }
 
@@ -44,79 +46,81 @@ bool MacGameLoop::start(TickCallback callback)
 
     status = CVDisplayLinkStart(displayLink);
     if (status != kCVReturnSuccess) {
-        AMEE_LOG_ERROR("MacGameLoop", "Failed to start CVDisplayLink: %d", status);
+        AMEE_LOG_ERROR("MacosGameLoop", "Failed to start CVDisplayLink: %d", status);
         CVDisplayLinkRelease(displayLink);
         return false;
     }
 
-    _displayLink = displayLink;
+    m_DisplayLink = displayLink;
 
     double refreshHz = CVDisplayLinkGetActualOutputVideoRefreshPeriod(displayLink);
-    AMEE_LOG_INFO("MacGameLoop", "Started (%.0f Hz)", refreshHz > 0 ? 1.0 / refreshHz : 60.0);
+    AMEE_LOG_INFO("MacosGameLoop", "Started (%.0f Hz)", refreshHz > 0 ? 1.0 / refreshHz : 60.0);
 
     return true;
 }
 
-void MacGameLoop::stop()
+void MacosGameLoop::stop()
 {
     if (!isRunning()) return;
 
-    CVDisplayLinkStop(_displayLink);
-    CVDisplayLinkRelease(_displayLink);
-    _displayLink = nullptr;
+    CVDisplayLinkStop(m_DisplayLink);
+    CVDisplayLinkRelease(m_DisplayLink);
+    m_DisplayLink = nullptr;
 
-    AMEE_LOG_INFO("MacGameLoop", "Stopped");
+    AMEE_LOG_INFO("MacosGameLoop", "Stopped");
 }
 
-bool MacGameLoop::isRunning() const
+bool MacosGameLoop::isRunning() const
 {
-    return _displayLink != nullptr;
+    return m_DisplayLink != nullptr;
 }
 
-double MacGameLoop::getDeltaTime() const
+double MacosGameLoop::getDeltaTime() const
 {
-    return _deltaTime;
+    return m_DeltaTime;
 }
 
-double MacGameLoop::getTime() const
+double MacosGameLoop::getTime() const
 {
-    return _time;
+    return m_Time;
 }
 
-unsigned int MacGameLoop::getFrameCount() const
+unsigned int MacosGameLoop::getFrameCount() const
 {
-    return _frameCount;
+    return m_FrameCount;
 }
 
-void MacGameLoop::handleDisplayLinkOutput(const CVTimeStamp* outputTime)
+void MacosGameLoop::handleDisplayLinkOutput(const CVTimeStamp* outputTime)
 {
     double timestamp = (double)outputTime->videoTime / (double)outputTime->videoTimeScale;
 
-    double rawDelta = timestamp - _lastTimestamp;
-    _lastTimestamp = timestamp;
+    double rawDelta = timestamp - m_LastTimestamp;
+    m_LastTimestamp = timestamp;
 
-    if (_frameCount == 0) {
+    if (m_FrameCount == 0) {
         rawDelta = 0;
     }
 
-    if (rawDelta > _maxDeltaTime) {
-        rawDelta = _maxDeltaTime;
+    if (rawDelta > m_MaxDeltaTime) {
+        rawDelta = m_MaxDeltaTime;
     }
 
-    _deltaTime = rawDelta;
-    _time += rawDelta;
-    _frameCount++;
+    m_DeltaTime = rawDelta;
+    m_Time += rawDelta;
+    m_FrameCount++;
 
-    _accumulatedFixedTime += rawDelta;
-    while (_accumulatedFixedTime >= _fixedDeltaTime) {
-        _fixedTime += _fixedDeltaTime;
-        _accumulatedFixedTime -= _fixedDeltaTime;
+    m_AccumulatedFixedTime += rawDelta;
+    while (m_AccumulatedFixedTime >= m_FixedDeltaTime) {
+        m_FixedTime += m_FixedDeltaTime;
+        m_AccumulatedFixedTime -= m_FixedDeltaTime;
     }
 
-    if (_callback) {
-        _callback(rawDelta, _time);
+    if (m_Callback) {
+        m_Callback(rawDelta, m_Time);
     }
 }
+
+} // namespace AMEE
 
 static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
                                     const CVTimeStamp *inNow,
@@ -127,7 +131,7 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
 {
     @autoreleasepool
     {
-        MacGameLoop* loop = static_cast<MacGameLoop*>(displayLinkContext);
+        AMEE::MacosGameLoop* loop = static_cast<AMEE::MacosGameLoop*>(displayLinkContext);
         dispatch_async(dispatch_get_main_queue(), ^{
             loop->handleDisplayLinkOutput(inOutputTime);
         });
