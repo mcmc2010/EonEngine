@@ -16,9 +16,8 @@ bool Application::Init(const ApplicationConfig& config)
     m_pWindow->create(config.Width, config.Height, config.Title.c_str());
     m_pWindow->setMinSize(config.MinWidth, config.MinHeight);
     m_pWindow->center();
-    m_pWindow->show();
 
-    // Create GL context
+    // Create GL context BEFORE showing window
     m_pGLContext = CreatePlatformGLContext();
     if (!m_pGLContext) {
         AMEE_LOG_ERROR("Application", "Failed to create platform GL context");
@@ -29,6 +28,9 @@ bool Application::Init(const ApplicationConfig& config)
         return false;
     }
     m_pGLContext->makeCurrent();
+
+    // Show window AFTER GL context is set up
+    m_pWindow->show();
 
     // Create RHI
     m_pRHI = CreateRHI();

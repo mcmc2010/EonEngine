@@ -45,7 +45,10 @@ AMEEAppController* GetAppController()
         return;
     }
 
-    g_pDemoApp->Run();
+    // Delay game loop start to let event loop initialize first
+    dispatch_async(dispatch_get_main_queue(), ^{
+        g_pDemoApp->Run();
+    });
 }
 
 - (void)applicationWillTerminate:(NSNotification *)aNotification
