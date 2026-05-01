@@ -644,6 +644,91 @@ uint32_t m_EBO = 0;  // Index buffer (EBO)
 | 标准 | 当前状态 |
 |------|---------|
 | 1. **构建成功**：`BUILD SUCCEEDED` | ✅ 已通过 |
-| 2. **窗口显示**：带纹理的旋转四边形 | ❌ DemoApp 待更新 |
-| 3. **无纹理时回退**：不崩溃 | ❌ DemoApp 待更新 |
-| 4. **日志正确**：`Loaded image` / `Created texture` | ❌ DemoApp 待更新 |
+| 2. **窗口显示**：带纹理的旋转四边形 | ✅ 已完成 |
+| 3. **无纹理时回退**：不崩溃 | ✅ 已完成 |
+| 4. **日志正确**：`Loaded image` / `Created texture` | ✅ 已完成 |
+
+---
+
+## 开发者反馈
+
+### 反馈 1：拼写错误
+
+**位置**：代码规范要求章节
+
+**问题**：
+```
+| 文件名 | `ALEEImage.hpp` / `AMEETexture2D.hpp` |
+```
+
+**修正**：应为 `AMEEImage.hpp`（缺少 `M`）
+
+---
+
+### 反馈 2：命名不一致
+
+| 位置 | 文档写法 | 代码规范 | 建议修正 |
+|------|---------|---------|---------|
+| Texture2D 访问器 | `GetGLTexture()` | 应为 `GetTextureID()` | 暴露了 OpenGL 实现细节，不符合 RHI 抽象原则 |
+| Math 函数 | `Mat4::RotateY()` | 函数名应小写开头 | `Mat4::rotateY()` |
+| 函数参数 | `int Width, int Height` | PascalCase | 已正确 |
+
+**说明**：`GetGLTexture()` 这个命名暗示了底层实现，如果未来切换到 Vulkan 后端，这个名称就不合适了。建议统一使用 `GetTextureID()`。
+
+---
+
+### 反馈 3：API 设计建议
+
+**当前设计**：
+```cpp
+virtual uint32_t createTexture(const unsigned char* data, int width, int height,
+                                RHIFormat format, RHIFormat internalFormat) = 0;
+```
+
+**问题**：参数过多（5 个），调用时可读性差。
+
+**建议**：使用描述结构体
+```cpp
+struct RHITextureDesc {
+    int Width;
+    int Height;
+    RHIFormat Format;
+    RHIFormat InternalFormat;
+};
+
+virtual uint32_t createTexture(const unsigned char* data, const RHITextureDesc& desc) = 0;
+```
+
+**好处**：
+- 参数更清晰
+- 未来扩展更容易（如添加 MipLevels、SampleCount 等）
+- 调用时不需要记住参数顺序
+
+---
+
+### 反馈 5：资源路径问题
+
+**当前设计**：
+```cpp
+m_pTexture->Load(GetRHI(), "Assets/Textures/03.png");
+```
+
+**问题**：
+1. 硬编码相对路径，不同平台行为不一致
+2. 没有说明资源如何打包到 App Bundle
+3. 运行时工作目录不确定
+
+**建议**：
+1. 提供 `GetResourcePath()` 辅助函数
+2. 支持从 App Bundle 加载资源（macOS: `NSBundle.mainBundle.resourcePath`）
+3. 在文档中说明 Xcode Copy Files 配置
+
+**示例**：
+```cpp
+// Application 基类提供
+std::string GetResourcePath(const std::string& relativePath) const;
+
+// 使用
+std::string texPath = GetResourcePath("Assets/Textures/03.png");
+m_pTexture->Load(GetRHI(), texPath);
+```
