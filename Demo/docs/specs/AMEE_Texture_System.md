@@ -324,7 +324,7 @@ public:
     void Destroy();
 
     // Accessors
-    uint32_t GetGLTexture() const { return m_TextureID; }
+    uint32_t GetTextureID() const { return m_TextureID; }
     int GetWidth()  const { return m_Width; }
     int GetHeight() const { return m_Height; }
 
@@ -629,11 +629,11 @@ uint32_t m_EBO = 0;  // Index buffer (EBO)
 | 项 | 规范 |
 |----|------|
 | 命名空间 | `AMEE` |
-| 文件名 | `ALEEImage.hpp` / `AMEETexture2D.hpp` |
+| 文件名 | `AMEEImage.hpp` / `AMEETexture2D.hpp` |
 | Include guard | `__AMEE_IMAGE_H__` / `__AMEE_TEXTURE2D_H__` |
 | 成员变量 | `m_` 前缀，PascalCase，指针加 `p`：`m_TextureID` / `m_pRHI` |
 | 函数参数 | PascalCase：`int Width, int Height` |
-| 访问器 | `GetWidth()` / `GetHeight()` |
+| 访问器 | `GetWidth()` / `GetHeight() / GetTextureID()` |
 
 注意：`AMEEImage.cpp` 中必须 `#define STB_IMAGE_IMPLEMENTATION` 且只能定义一次（在 .cpp 中）。
 
@@ -650,30 +650,12 @@ uint32_t m_EBO = 0;  // Index buffer (EBO)
 
 ---
 
-## 开发者反馈
+## 开发者反馈（已处理）
 
-### 反馈 1：拼写错误
-
-**位置**：代码规范要求章节
-
-**问题**：
-```
-| 文件名 | `ALEEImage.hpp` / `AMEETexture2D.hpp` |
-```
-
-**修正**：应为 `AMEEImage.hpp`（缺少 `M`）
-
----
-
-### 反馈 2：命名不一致
-
-| 位置 | 文档写法 | 代码规范 | 建议修正 |
-|------|---------|---------|---------|
-| Texture2D 访问器 | `GetGLTexture()` | 应为 `GetTextureID()` | 暴露了 OpenGL 实现细节，不符合 RHI 抽象原则 |
-| Math 函数 | `Mat4::RotateY()` | 函数名应小写开头 | `Mat4::rotateY()` |
-| 函数参数 | `int Width, int Height` | PascalCase | 已正确 |
-
-**说明**：`GetGLTexture()` 这个命名暗示了底层实现，如果未来切换到 Vulkan 后端，这个名称就不合适了。建议统一使用 `GetTextureID()`。
+| 反馈 | 问题 | 处理 |
+|------|------|------|
+| 1. 拼写 | `ALEEImage` → `AMEEImage` | ✅ 已修正 |
+| 2. 命名 | `GetGLTexture()` → `GetTextureID()` | ✅ 文档已修正，代码中已修正 |
 
 ---
 
@@ -706,29 +688,48 @@ virtual uint32_t createTexture(const unsigned char* data, const RHITextureDesc& 
 
 ---
 
-### 反馈 5：资源路径问题
+### 资源路径（待处理）
 
-**当前设计**：
+**问题**：当前硬编码 `"Assets/Textures/03.png"`，macOS App Bundle 环境中工作目录不确定，无法可靠定位。
+
+**建议**：在 `Application` 基类中增加 `GetResourcePath()` 辅助函数：
+
 ```cpp
-m_pTexture->Load(GetRHI(), "Assets/Textures/03.png");
+// AMEEApplication.hpp
+class Application {
+public:
+    // 返回应用资源目录下的文件路径
+    // macOS: {Bundle}.app/Contents/Resources/
+    // 其他平台待定
+    std::string GetResourcePath(const std::string& relativePath) const;
+};
 ```
 
-**问题**：
-1. 硬编码相对路径，不同平台行为不一致
-2. 没有说明资源如何打包到 App Bundle
-3. 运行时工作目录不确定
+实现（macOS，纯 C）：
 
-**建议**：
-1. 提供 `GetResourcePath()` 辅助函数
-2. 支持从 App Bundle 加载资源（macOS: `NSBundle.mainBundle.resourcePath`）
-3. 在文档中说明 Xcode Copy Files 配置
-
-**示例**：
 ```cpp
-// Application 基类提供
-std::string GetResourcePath(const std::string& relativePath) const;
+// AMEEApplication.cpp
+#include <CoreFoundation/CoreFoundation.h>
+#include <cstring>
 
-// 使用
+std::string Application::GetResourcePath(const std::string& relativePath) const
+{
+    CFBundleRef bundle = CFBundleGetMainBundle();
+    CFURLRef url = CFBundleCopyResourcesDirectoryURL(bundle);
+    char basePath[1024] = {};
+    if (url) {
+        CFURLGetFileSystemRepresentation(url, true, (UInt8*)basePath, sizeof(basePath));
+        CFRelease(url);
+    }
+    return std::string(basePath) + "/" + relativePath;
+}
+```
+
+使用：
+
+```cpp
 std::string texPath = GetResourcePath("Assets/Textures/03.png");
 m_pTexture->Load(GetRHI(), texPath);
 ```
+
+**同时需要在 Xcode 中配置**：Target `Demo` → Build Phases → Add Copy Files，将 `Assets/` 目录复制到 `Resources/`。否则运行时找不到资源文件。
