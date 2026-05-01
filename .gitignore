@@ -34,3 +34,9 @@
 *.out
 *.app
 .VSCodeCounter/
+
+# ThirdParty - 只跟踪 stb 头文件本身，忽略测试/文档/示例
+Demo/ThirdParty/stb/**
+!Demo/ThirdParty/stb/stb_*.h
+!Demo/ThirdParty/stb/stb_vorbis.c
+!Demo/ThirdParty/stb/LICENSE
