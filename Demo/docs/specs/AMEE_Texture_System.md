@@ -6,23 +6,23 @@
 
 ## 涉及文件
 
-| 操作 | 文件 | 说明 |
-|------|------|------|
-| **修改** | `Render/AMEERHI.hpp` | RHI 基类新增纹理虚函数 |
-| **修改** | `Render/AMEERHITypes.hpp` | 新增纹理相关的枚举/结构体 |
-| **修改** | `Platform/macOS/GL/AMEERHIOpenGL.hpp` | RHIOpenGL 实现新增纹理方法 |
-| **修改** | `Platform/macOS/GL/AMEERHIOpenGL.mm` | OpenGL 纹理创建/绑定实装 |
-| **新建** | `Render/Texture/AMEEImage.hpp` | stb_image 封装：CPU 侧图片数据 |
-| **新建** | `Render/Texture/AMEEImage.cpp` | 实现 LoadImage / FreeImage |
-| **新建** | `Render/Texture/AMEETexture2D.hpp` | GPU 纹理对象，Create/Destroy/Bind |
-| **新建** | `Render/Texture/AMEETexture2D.cpp` | 实现（调用 RHI 接口） |
-| **修改** | `Sources/DemoApp.hpp` | 新增成员 Texture2D + Mesh(四边形) |
-| **修改** | `Sources/DemoApp.cpp` | 初始化纹理+四边形，渲染调用 |
-| **新建** | `Demo/Assets/Textures/` | 放一张测试图片（如 checkboard.png） |
+| 操作 | 文件 | 说明 | 状态 |
+|------|------|------|------|
+| **修改** | `Render/AMEERHI.hpp` | RHI 基类新增纹理虚函数 | ✅ |
+| **修改** | `Render/AMEERHITypes.hpp` | 新增纹理相关的枚举/结构体 | ✅ |
+| **修改** | `Platform/macOS/GL/AMEERHIOpenGL.hpp` | RHIOpenGL 实现新增纹理方法 | ✅ |
+| **修改** | `Platform/macOS/GL/AMEERHIOpenGL.mm` | OpenGL 纹理创建/绑定实装 | ✅ |
+| **新建** | `Render/Texture/AMEEImage.hpp` | stb_image 封装：CPU 侧图片数据 | ✅ |
+| **新建** | `Render/Texture/AMEEImage.cpp` | 实现 LoadImage / FreeImage | ✅ |
+| **新建** | `Render/Texture/AMEETexture2D.hpp` | GPU 纹理对象，Create/Destroy/Bind | ✅ |
+| **新建** | `Render/Texture/AMEETexture2D.cpp` | 实现（调用 RHI 接口） | ✅ |
+| **修改** | `Sources/DemoApp.hpp` | 新增成员 Texture2D + Mesh(四边形) | ❌ |
+| **修改** | `Sources/DemoApp.cpp` | 初始化纹理+四边形，渲染调用 | ❌ |
+| **新建** | `Demo/Assets/Textures/` | 放一张测试图片（如 checkboard.png） | ✅ |
 
 ---
 
-## 步骤 1：扩展 RHI 接口
+## ✅ 步骤 1：扩展 RHI 接口（已完成）
 
 ### 1.1 RHI 基类新增纹理接口
 
@@ -207,7 +207,10 @@ GLenum RHIOpenGL::wrapToGL(RHIWrap wrap) {
 
 ---
 
-## 步骤 2：创建 Image 封装（stb_image）
+## ✅ 步骤 2：创建 Image 封装（已完成）
+
+注意：实现了 `LoadImage()` 和 `ImageData` 结构体，`#define STB_IMAGE_IMPLEMENTATION` 在 `.cpp` 中。
+⚠️ `AMEEImage.cpp` 使用了 `std::memcpy` 但缺少 `#include <cstring>`，需补上。
 
 ### 2.1 AMEEImage.hpp
 
@@ -280,7 +283,7 @@ ImageData LoadImage(const std::string& FilePath)
 
 ---
 
-## 步骤 3：创建 Texture2D 封装
+## ✅ 步骤 3：创建 Texture2D 封装（已完成）
 
 ### 3.1 AMEETexture2D.hpp
 
@@ -420,7 +423,12 @@ void Texture2D::Destroy()
 
 ---
 
-## 步骤 4：修改 Demo 验证
+## ❌ 步骤 4：修改 Demo 验证（待完成）
+
+引擎层代码已全部就绪，DemoApp 尚未更新来展示纹理。需要：
+1. `DemoApp.hpp` — 添加 `Texture2D` 成员和四边形 `Mesh`
+2. `DemoApp.cpp` — `OnInit` 中加载纹理、创建索引四边形；`OnRender` 中绑定纹理、绘四边形
+3. Shader 从纯色改为 texcoord + sampler2D（见步骤 5）
 
 ### 4.1 修改 DemoApp.hpp
 
@@ -551,7 +559,9 @@ const char* vs = R"(
 
 ---
 
-## 步骤 6：Mesh 支持索引缓冲
+## ✅ 步骤 4b：Mesh 支持索引缓冲（已完成）
+
+实际按 4、5、6 顺序开发，但索引缓冲（EBO + `CreateIndexed` + `drawElements`）随步骤 1 一并完成。
 
 `Mesh` 需要新增 `CreateIndexed` 方法：
 
@@ -631,7 +641,9 @@ uint32_t m_EBO = 0;  // Index buffer (EBO)
 
 ## 验收标准
 
-1. **构建成功**：`BUILD SUCCEEDED`
-2. **窗口显示**：运行 Demo.app 显示一个带纹理的旋转四边形
-3. **无纹理时回退**：删除纹理文件后，程序应加载失败但不会崩溃
-4. **日志正确**：启动日志显示 `Loaded image` 和 `Created texture`
+| 标准 | 当前状态 |
+|------|---------|
+| 1. **构建成功**：`BUILD SUCCEEDED` | ✅ 已通过 |
+| 2. **窗口显示**：带纹理的旋转四边形 | ❌ DemoApp 待更新 |
+| 3. **无纹理时回退**：不崩溃 | ❌ DemoApp 待更新 |
+| 4. **日志正确**：`Loaded image` / `Created texture` | ❌ DemoApp 待更新 |
