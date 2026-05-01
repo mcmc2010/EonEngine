@@ -18,7 +18,7 @@
 | **新建** | `Render/Texture/AMEETexture2D.cpp` | 实现（调用 RHI 接口） | ✅ |
 | **修改** | `Sources/DemoApp.hpp` | 新增成员 Texture2D + Mesh(四边形) | ❌ |
 | **修改** | `Sources/DemoApp.cpp` | 初始化纹理+四边形，渲染调用 | ❌ |
-| **新建** | `Demo/Assets/Textures/` | 放一张测试图片（如 checkboard.png） | ✅ |
+| **新建** | `Demo/Assets/Textures/` | 放一张测试图片（`03.png`，用户已添加） | ✅ |
 
 ---
 
@@ -453,10 +453,10 @@ bool DemoApp::OnInit()
     // ... 保留原有 shader 编译代码 ...
 
     // ---- 新纹理部分 ----
-    // 加载纹理
-    const std::string texPath = GetResourcePath("Assets/Textures/checkboard.png");
+    // 使用 Xcode Copy Files 将 Assets 复制到 App bundle 的 Resources/
+    // 路径为: {bundle}.app/Contents/Resources/Assets/Textures/03.png
     m_pTexture = std::make_unique<Texture2D>();
-    if (!m_pTexture->Load(GetRHI(), texPath)) {
+    if (!m_pTexture->Load(GetRHI(), "Assets/Textures/03.png")) {
         AMEE_LOG_ERROR("DemoApp", "Failed to load texture");
         return false;
     }
