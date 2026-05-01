@@ -5,6 +5,7 @@
 #include "AMEEFramework/Platform/macOS/AMEEMacosApplication.hpp"
 #include "AMEEFramework/Render/AMEEMesh.hpp"
 #include "AMEEFramework/Render/Shader/AMEEShaderProgram.hpp"
+#include "AMEEFramework/Render/Texture/AMEETexture2D.hpp"
 #include "AMEEFramework/Core/Math/AMEEMath.hpp"
 #include "AMEEFramework/Core/Log/AMEELog.hpp"
 #include <memory>
@@ -19,7 +20,8 @@ protected:
 
 private:
     std::unique_ptr<ShaderProgram> m_pShader;
-    std::unique_ptr<Mesh> m_pTriangle;
+    std::unique_ptr<Mesh> m_pQuad;
+    std::unique_ptr<Texture2D> m_pTexture;
 };
 
 } // namespace AMEE

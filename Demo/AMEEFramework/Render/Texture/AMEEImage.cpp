@@ -5,6 +5,7 @@
 #include "../../../ThirdParty/stb/stb_image.h"
 
 #include "../../Core/Log/AMEELog.hpp"
+#include <cstring>
 
 namespace AMEE {
 
