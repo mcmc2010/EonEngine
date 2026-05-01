@@ -16,8 +16,8 @@
 | **新建** | `Render/Texture/AMEEImage.cpp` | 实现 LoadImage / FreeImage | ✅ |
 | **新建** | `Render/Texture/AMEETexture2D.hpp` | GPU 纹理对象，Create/Destroy/Bind | ✅ |
 | **新建** | `Render/Texture/AMEETexture2D.cpp` | 实现（调用 RHI 接口） | ✅ |
-| **修改** | `Sources/DemoApp.hpp` | 新增成员 Texture2D + Mesh(四边形) | ❌ |
-| **修改** | `Sources/DemoApp.cpp` | 初始化纹理+四边形，渲染调用 | ❌ |
+| **修改** | `Sources/DemoApp.hpp` | 新增成员 Texture2D + Mesh(四边形) | ✅ |
+| **修改** | `Sources/DemoApp.cpp` | 初始化纹理+四边形，渲染调用 | ✅ |
 | **新建** | `Demo/Assets/Textures/` | 放一张测试图片（`03.png`，用户已添加） | ✅ |
 
 ---
@@ -423,7 +423,7 @@ void Texture2D::Destroy()
 
 ---
 
-## ❌ 步骤 4：修改 Demo 验证（待完成）
+## ✅ 步骤 4：修改 Demo 验证（已完成）
 
 引擎层代码已全部就绪，DemoApp 尚未更新来展示纹理。需要：
 1. `DemoApp.hpp` — 添加 `Texture2D` 成员和四边形 `Mesh`
