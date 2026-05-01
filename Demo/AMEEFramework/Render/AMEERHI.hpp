@@ -47,6 +47,11 @@ public:
     virtual void destroyVertexBuffer(uint32_t id) = 0;
     virtual void bindVertexBuffer(uint32_t id) = 0;
 
+    // EBO (Index Buffer)
+    virtual uint32_t createIndexBuffer(const uint32_t* data, uint32_t size) = 0;
+    virtual void destroyIndexBuffer(uint32_t id) = 0;
+    virtual void bindIndexBuffer(uint32_t id) = 0;
+
     // VAO
     virtual uint32_t createVertexArray() = 0;
     virtual void destroyVertexArray(uint32_t id) = 0;
@@ -55,8 +60,17 @@ public:
     virtual void enableVertexAttribArray(uint32_t index) = 0;
     virtual void disableVertexAttribArray(uint32_t index) = 0;
 
+    // Texture
+    virtual uint32_t createTexture(const unsigned char* data, int width, int height,
+                                    RHIFormat format, RHIFormat internalFormat) = 0;
+    virtual void destroyTexture(uint32_t id) = 0;
+    virtual void bindTexture(uint32_t id, uint32_t slot) = 0;
+    virtual void setTextureFilter(uint32_t id, RHIFilter minFilter, RHIFilter magFilter) = 0;
+    virtual void setTextureWrap(uint32_t id, RHIWrap wrapS, RHIWrap wrapT) = 0;
+
     // Draw
     virtual void drawArrays(RHIPrimitive primitive, uint32_t count, uint32_t offset = 0) = 0;
+    virtual void drawElements(RHIPrimitive primitive, uint32_t count, uint32_t offset = 0) = 0;
 };
 }
 

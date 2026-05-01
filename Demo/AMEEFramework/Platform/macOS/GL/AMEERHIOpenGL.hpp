@@ -2,6 +2,8 @@
 #define __AMEE_RHIOPENGL_H__
 #pragma once
 #include "../../../Render/AMEERHI.hpp"
+#define GL_SILENCE_DEPRECATION
+#include <OpenGL/gl.h>
 
 namespace AMEE {
 
@@ -21,6 +23,11 @@ public:
     void destroyVertexBuffer(uint32_t id) override;
     void bindVertexBuffer(uint32_t id) override;
 
+    // EBO (Index Buffer)
+    uint32_t createIndexBuffer(const uint32_t* data, uint32_t size) override;
+    void destroyIndexBuffer(uint32_t id) override;
+    void bindIndexBuffer(uint32_t id) override;
+
     // VAO
     uint32_t createVertexArray() override;
     void destroyVertexArray(uint32_t id) override;
@@ -29,8 +36,23 @@ public:
     void enableVertexAttribArray(uint32_t index) override;
     void disableVertexAttribArray(uint32_t index) override;
 
+    // Texture
+    uint32_t createTexture(const unsigned char* data, int width, int height,
+                            RHIFormat format, RHIFormat internalFormat) override;
+    void destroyTexture(uint32_t id) override;
+    void bindTexture(uint32_t id, uint32_t slot) override;
+    void setTextureFilter(uint32_t id, RHIFilter minFilter, RHIFilter magFilter) override;
+    void setTextureWrap(uint32_t id, RHIWrap wrapS, RHIWrap wrapT) override;
+
     // Draw
     void drawArrays(RHIPrimitive primitive, uint32_t count, uint32_t offset) override;
+    void drawElements(RHIPrimitive primitive, uint32_t count, uint32_t offset) override;
+
+private:
+    static GLenum formatToGL(RHIFormat format);
+    static GLenum internalFormatToGL(RHIFormat format);
+    static GLenum filterToGL(RHIFilter filter);
+    static GLenum wrapToGL(RHIWrap wrap);
 };
 }
 
