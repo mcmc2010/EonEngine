@@ -101,7 +101,6 @@
 				3BAE876A2ED3202F002522AE /* AppKit.framework in Frameworks */,
 				3BAE87712ED32101002522AE /* CoreVideo.framework in Frameworks */,
 				3BAE87682ED31F30002522AE /* Foundation.framework in Frameworks */,
-				3BAE87732ED32201002522AE /* OpenGL.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -133,7 +132,6 @@
 			children = (
 				3BAE87692ED3202F002522AE /* AppKit.framework */,
 				3BAE87702ED32100002522AE /* CoreVideo.framework */,
-				3BAE87722ED32200002522AE /* OpenGL.framework */,
 				3BAE87672ED31F30002522AE /* Foundation.framework */,
 			);
 			name = Frameworks;

@@ -11,7 +11,7 @@ public:
     MacosGameLoop();
     ~MacosGameLoop() override;
 
-    bool start(TickCallback callback) override;
+    bool start(RenderCallback renderCb, FixedCallback fixedCb = nullptr) override;
     void stop() override;
     bool isRunning() const override;
 
@@ -23,7 +23,8 @@ public:
 
 private:
     CVDisplayLinkRef m_DisplayLink;
-    TickCallback m_Callback;
+    RenderCallback m_RenderCallback;
+    FixedCallback  m_FixedCallback;
 
     double m_LastTimestamp;
     double m_DeltaTime;

@@ -3,8 +3,11 @@
 #pragma once
 #include "AMEERHITypes.hpp"
 #include <cstdint>
+#include <memory>
 
 namespace AMEE {
+
+class ShaderProgram;
 
 
 // Primitives
@@ -67,6 +70,9 @@ public:
     virtual void bindTexture(uint32_t id, uint32_t slot) = 0;
     virtual void setTextureFilter(uint32_t id, RHIFilter minFilter, RHIFilter magFilter) = 0;
     virtual void setTextureWrap(uint32_t id, RHIWrap wrapS, RHIWrap wrapT) = 0;
+
+    // Shader
+    virtual std::unique_ptr<ShaderProgram> CreateShaderProgram() = 0;
 
     // Draw
     virtual void drawArrays(RHIPrimitive primitive, uint32_t count, uint32_t offset = 0) = 0;

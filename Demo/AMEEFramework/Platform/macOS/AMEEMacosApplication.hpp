@@ -11,6 +11,7 @@ protected:
     std::unique_ptr<IPlatformGLContext> CreatePlatformGLContext() override;
     std::unique_ptr<IPlatformLoop> CreatePlatformGameLoop() override;
     std::unique_ptr<RHI> CreateRHI() override;
+    void OnWindowShouldClose() override;
 };
 
 } // namespace AMEE

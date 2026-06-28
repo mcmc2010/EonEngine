@@ -1,9 +1,10 @@
 #ifndef __AMEE_LOG_H__
 #define __AMEE_LOG_H__
 #pragma once
-#include <cstdarg>
+#include <cstdint>
 #include <cstdio>
-#include <string>
+#include <vector>
+#include <mutex>
 
 namespace AMEE {
 
@@ -16,30 +17,40 @@ enum class LogLevel : uint8_t {
 
 class Logger {
 public:
-    // Initialize logger (call once at startup)
     static void init(LogLevel minLevel = LogLevel::Debug);
-    
-    // Set minimum log level
     static void setLevel(LogLevel level);
-    
-    // Get minimum log level
     static LogLevel getLevel();
-    
-    // Log a message
+
+    // 格式化 + 入缓冲，不做 I/O，永远不阻塞
     static void log(LogLevel level, const char* tag, const char* fmt, ...);
-    
-    // Log with va_list
-    static void vlog(LogLevel level, const char* tag, const char* fmt, va_list args);
-    
-    // Enable/disable file logging
+
+    // 非阻塞 flush：try_lock 成功则写出全部缓冲，失败则跳过
+    static void flush();
+
+    // 阻塞 flush：强制写出，用于退出前
+    static void flushAll();
+
     static void enableFileLog(const char* path);
     static void disableFileLog();
-    
-    // Flush
-    static void flush();
+
+private:
+    struct LogEntry {
+        LogLevel Level;
+        char Tag[32];
+        char Message[1024];
+    };
+
+    static LogLevel gs_MinLevel;
+    static FILE* gs_pFileLog;
+    static std::mutex gs_Mutex;
+    static std::vector<LogEntry> gs_Buffer;
+
+    static void writeEntries(const std::vector<LogEntry>& entries, FILE* fileLog);
+
+    static const char* levelToString(LogLevel level);
+    static const char* levelColor(LogLevel level);
 };
 
-// Convenience macros
 #define AMEE_LOG_DEBUG(tag, fmt, ...) AMEE::Logger::log(AMEE::LogLevel::Debug, tag, fmt, ##__VA_ARGS__)
 #define AMEE_LOG_INFO(tag, fmt, ...)  AMEE::Logger::log(AMEE::LogLevel::Info, tag, fmt, ##__VA_ARGS__)
 #define AMEE_LOG_WARN(tag, fmt, ...)  AMEE::Logger::log(AMEE::LogLevel::Warning, tag, fmt, ##__VA_ARGS__)

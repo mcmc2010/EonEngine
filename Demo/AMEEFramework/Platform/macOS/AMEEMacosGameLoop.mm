@@ -1,6 +1,10 @@
 #import "AMEEMacosGameLoop.hpp"
 #import "../../Core/Log/AMEELog.hpp"
 #include "../../Core/Platform/IAMEEPlatformLoop.hpp"
+#import <AppKit/AppKit.h>
+#import <CoreFoundation/CoreFoundation.h>
+
+static id g_DisplayChangeObserver = nil;
 
 static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
                                     const CVTimeStamp *inNow,
@@ -29,11 +33,23 @@ MacosGameLoop::~MacosGameLoop()
     stop();
 }
 
-bool MacosGameLoop::start(TickCallback callback)
+bool MacosGameLoop::start(RenderCallback renderCb, FixedCallback fixedCb)
 {
     if (isRunning()) return false;
 
-    m_Callback = std::move(callback);
+    m_RenderCallback = std::move(renderCb);
+    m_FixedCallback  = std::move(fixedCb);
+
+    // Watch for display changes (sleep, resolution switch, etc.)
+    if (!g_DisplayChangeObserver) {
+        g_DisplayChangeObserver = [[NSNotificationCenter defaultCenter]
+            addObserverForName:NSApplicationDidChangeScreenParametersNotification
+            object:nil
+            queue:[NSOperationQueue mainQueue]
+            usingBlock:^(NSNotification* note) {
+                AMEE_LOG_WARN("MacosGameLoop", "Display configuration changed");
+            }];
+    }
 
     CVDisplayLinkRef displayLink = nullptr;
     CVReturn status = CVDisplayLinkCreateWithCGDisplay(CGMainDisplayID(), &displayLink);
@@ -92,7 +108,7 @@ unsigned int MacosGameLoop::getFrameCount() const
 
 void MacosGameLoop::handleDisplayLinkOutput(const CVTimeStamp* outputTime)
 {
-    double timestamp = (double)outputTime->videoTime / (double)outputTime->videoTimeScale;
+    double timestamp = CFAbsoluteTimeGetCurrent();
 
     double rawDelta = timestamp - m_LastTimestamp;
     m_LastTimestamp = timestamp;
@@ -113,10 +129,19 @@ void MacosGameLoop::handleDisplayLinkOutput(const CVTimeStamp* outputTime)
     while (m_AccumulatedFixedTime >= m_FixedDeltaTime) {
         m_FixedTime += m_FixedDeltaTime;
         m_AccumulatedFixedTime -= m_FixedDeltaTime;
+        if (m_FixedCallback) {
+            m_FixedCallback(m_FixedDeltaTime);
+        }
     }
 
-    if (m_Callback) {
-        m_Callback(rawDelta, m_Time);
+    if (m_RenderCallback) {
+        m_RenderCallback(rawDelta, m_Time);
+    }
+
+    // Heartbeat: log every 60 frames so we can see when it stops
+    if (m_FrameCount % 600 == 0) {
+        AMEE_LOG_INFO("MacosGameLoop", "Heartbeat: frame %u, time %.1fs",
+                      m_FrameCount, m_Time);
     }
 }
 
@@ -133,7 +158,9 @@ static CVReturn displayLinkCallback(CVDisplayLinkRef displayLink,
     {
         AMEE::MacosGameLoop* loop = static_cast<AMEE::MacosGameLoop*>(displayLinkContext);
         dispatch_async(dispatch_get_main_queue(), ^{
-            loop->handleDisplayLinkOutput(inOutputTime);
+            @autoreleasepool {
+                loop->handleDisplayLinkOutput(inOutputTime);
+            }
         });
     }
     return kCVReturnSuccess;

@@ -16,7 +16,6 @@ struct ShaderCompileError {
     int line;
 };
 
-using ShaderHandle = void*;
 }
 
 #endif // __AMEE_SHADER_H__

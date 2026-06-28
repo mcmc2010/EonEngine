@@ -8,11 +8,12 @@ namespace AMEE {
 
 class IPlatformLoop {
 public:
-    using TickCallback = std::function<void(double dt, double time)>;
+    using RenderCallback = std::function<void(double dt, double totalTime)>;
+    using FixedCallback  = std::function<void(double fixedDt)>;
 
     virtual ~IPlatformLoop() = default;
 
-    virtual bool start(TickCallback callback) = 0;
+    virtual bool start(RenderCallback renderCb, FixedCallback fixedCb = nullptr) = 0;
     virtual void stop() = 0;
     virtual bool isRunning() const = 0;
 

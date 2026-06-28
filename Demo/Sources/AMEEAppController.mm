@@ -32,11 +32,11 @@ AMEEAppController* GetAppController()
     g_pDemoApp = new AMEE::DemoApp();
 
     AMEE::ApplicationConfig config;
-    config.Width = 1024;
-    config.Height = 768;
+    config.Width = 1280;
+    config.Height = 720;
     config.Title = "AMEE Engine (OpenGL 4.1)";
-    config.MinWidth = 320;
-    config.MinHeight = 240;
+    config.MinWidth = 640;
+    config.MinHeight = 480;
 
     if (!g_pDemoApp->Init(config)) {
         AMEE_LOG_ERROR("App", "Failed to initialize application");

@@ -38,8 +38,10 @@ public:
 protected:
     // Override in subclass for custom init/render/shutdown
     virtual bool OnInit() { return true; }
-    virtual void OnRender(float deltaTime, float totalTime) = 0;
+    virtual void OnFixedUpdate(float fixedDt) {}
+    virtual void OnRender(double deltaTime, double totalTime) = 0;
     virtual void OnShutdown() {}
+    virtual void OnWindowShouldClose() {}
 
     // Platform factory methods — override per platform
     virtual std::unique_ptr<IPlatformWindow> CreatePlatformWindow() = 0;

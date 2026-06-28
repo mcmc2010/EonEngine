@@ -3,9 +3,8 @@
 #pragma once
 #include "AMEEFramework/Core/AMEEApplication.hpp"
 #include "AMEEFramework/Platform/macOS/AMEEMacosApplication.hpp"
+#include "AMEEFramework/Core/Asset/AMEEAssetHandle.hpp"
 #include "AMEEFramework/Render/AMEEMesh.hpp"
-#include "AMEEFramework/Render/Shader/AMEEShaderProgram.hpp"
-#include "AMEEFramework/Render/Texture/AMEETexture2D.hpp"
 #include "AMEEFramework/Core/Math/AMEEMath.hpp"
 #include "AMEEFramework/Core/Log/AMEELog.hpp"
 #include <memory>
@@ -15,13 +14,15 @@ namespace AMEE {
 class DemoApp : public MacosApplication {
 protected:
     bool OnInit() override;
-    void OnRender(float deltaTime, float totalTime) override;
+    void OnFixedUpdate(float fixedDt) override;
+    void OnRender(double deltaTime, double totalTime) override;
     void OnShutdown() override;
 
 private:
-    std::unique_ptr<ShaderProgram> m_pShader;
+    ShaderHandle m_ShaderHandle;
     std::unique_ptr<Mesh> m_pQuad;
-    std::unique_ptr<Texture2D> m_pTexture;
+    TextureHandle m_TextureHandle;
+    double m_Angle = 0;
 };
 
 } // namespace AMEE

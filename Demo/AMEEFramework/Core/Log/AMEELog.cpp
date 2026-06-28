@@ -1,16 +1,17 @@
 #include "AMEELog.hpp"
-#include <mutex>
-#include <ctime>
 #include <cstdio>
-#include <cstdarg>
+#include <cstring>
+#include <ctime>
 
 namespace AMEE {
 
-static LogLevel g_MinLevel = LogLevel::Debug;
-static FILE* g_pFileLog = nullptr;
-static std::recursive_mutex g_LogMutex;
+LogLevel Logger::gs_MinLevel = LogLevel::Debug;
+FILE* Logger::gs_pFileLog = nullptr;
+std::mutex Logger::gs_Mutex;
+std::vector<Logger::LogEntry> Logger::gs_Buffer;
 
-static const char* LevelToString(LogLevel level) {
+const char* Logger::levelToString(LogLevel level)
+{
     switch (level) {
         case LogLevel::Debug:   return "DEBUG";
         case LogLevel::Info:    return "INFO";
@@ -20,7 +21,8 @@ static const char* LevelToString(LogLevel level) {
     return "UNKNOWN";
 }
 
-static const char* LevelColor(LogLevel level) {
+const char* Logger::levelColor(LogLevel level)
+{
     switch (level) {
         case LogLevel::Debug:   return "\033[36m";
         case LogLevel::Info:    return "\033[32m";
@@ -30,79 +32,123 @@ static const char* LevelColor(LogLevel level) {
     return "\033[0m";
 }
 
-void Logger::init(LogLevel minLevel) {
-    std::lock_guard<std::recursive_mutex> lock(g_LogMutex);
-    g_MinLevel = minLevel;
-    AMEE_LOG_INFO("Logger", "Logger initialized (level=%s)", LevelToString(minLevel));
+void Logger::init(LogLevel minLevel)
+{
+    gs_MinLevel = minLevel;
+    log(LogLevel::Info, "Logger", "Logger initialized (level=%s)", levelToString(minLevel));
+    flushAll();
 }
 
-void Logger::setLevel(LogLevel level) {
-    std::lock_guard<std::recursive_mutex> lock(g_LogMutex);
-    g_MinLevel = level;
+void Logger::setLevel(LogLevel level)
+{
+    gs_MinLevel = level;
 }
 
-LogLevel Logger::getLevel() {
-    std::lock_guard<std::recursive_mutex> lock(g_LogMutex);
-    return g_MinLevel;
+LogLevel Logger::getLevel()
+{
+    return gs_MinLevel;
 }
 
-void Logger::log(LogLevel level, const char* tag, const char* fmt, ...) {
+void Logger::log(LogLevel level, const char* tag, const char* fmt, ...)
+{
+    if (level < gs_MinLevel) return;
+
+    char msg[1024];
     va_list args;
     va_start(args, fmt);
-    vlog(level, tag, fmt, args);
+    va_list argsCopy;
+    va_copy(argsCopy, args);
+    vsnprintf(msg, sizeof(msg), fmt, argsCopy);
+    va_end(argsCopy);
     va_end(args);
+
+    // scope: 释放锁后再 flush，避免 try_lock 死锁
+    {
+        LogEntry entry;
+        entry.Level = level;
+        strncpy(entry.Tag, tag, sizeof(entry.Tag) - 1);
+        entry.Tag[sizeof(entry.Tag) - 1] = '\0';
+        strncpy(entry.Message, msg, sizeof(entry.Message) - 1);
+        entry.Message[sizeof(entry.Message) - 1] = '\0';
+
+        std::lock_guard<std::mutex> lock(gs_Mutex);
+        gs_Buffer.push_back(entry);
+    }
+
+    flush();
 }
 
-void Logger::vlog(LogLevel level, const char* tag, const char* fmt, va_list args) {
-    if (level < g_MinLevel) return;
+void Logger::flush()
+{
+    std::vector<LogEntry> flushBuffer;
+    FILE* fileLog = nullptr;
+    {
+        std::unique_lock<std::mutex> lock(gs_Mutex, std::try_to_lock);
+        if (!lock.owns_lock() || gs_Buffer.empty()) return;
+        flushBuffer.swap(gs_Buffer);
+        fileLog = gs_pFileLog;
+    }
+    writeEntries(flushBuffer, fileLog);
+}
 
-    std::lock_guard<std::recursive_mutex> lock(g_LogMutex);
+void Logger::flushAll()
+{
+    std::vector<LogEntry> flushBuffer;
+    FILE* fileLog = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(gs_Mutex);
+        if (gs_Buffer.empty()) return;
+        flushBuffer.swap(gs_Buffer);
+        fileLog = gs_pFileLog;
+    }
+    writeEntries(flushBuffer, fileLog);
+}
 
+void Logger::writeEntries(const std::vector<LogEntry>& entries, FILE* fileLog)
+{
     time_t now = time(nullptr);
     struct tm* tm = localtime(&now);
     char timeStr[20];
     strftime(timeStr, sizeof(timeStr), "%H:%M:%S", tm);
 
-    char msg[1024];
-    va_list argsCopy;
-    va_copy(argsCopy, args);
-    vsnprintf(msg, sizeof(msg), fmt, argsCopy);
-    va_end(argsCopy);
+    for (const auto& entry : entries) {
+        fprintf(stderr, "%s[%s] [%s] %s: %s\033[0m\n",
+                levelColor(entry.Level), timeStr,
+                levelToString(entry.Level), entry.Tag, entry.Message);
 
-    fprintf(stderr, "%s[%s] [%s] %s: %s\033[0m\n",
-            LevelColor(level), timeStr, LevelToString(level), tag, msg);
-
-    if (g_pFileLog) {
-        fprintf(g_pFileLog, "[%s] [%s] %s: %s\n",
-                timeStr, LevelToString(level), tag, msg);
-        fflush(g_pFileLog);
+        if (fileLog) {
+            fprintf(fileLog, "[%s] [%s] %s: %s\n",
+                    timeStr, levelToString(entry.Level),
+                    entry.Tag, entry.Message);
+        }
     }
-}
 
-void Logger::enableFileLog(const char* path) {
-    std::lock_guard<std::recursive_mutex> lock(g_LogMutex);
-    if (g_pFileLog) {
-        fclose(g_pFileLog);
-    }
-    g_pFileLog = fopen(path, "w");
-    if (g_pFileLog) {
-        AMEE_LOG_INFO("Logger", "File logging enabled: %s", path);
-    }
-}
-
-void Logger::disableFileLog() {
-    std::lock_guard<std::recursive_mutex> lock(g_LogMutex);
-    if (g_pFileLog) {
-        fclose(g_pFileLog);
-        g_pFileLog = nullptr;
-    }
-}
-
-void Logger::flush() {
-    std::lock_guard<std::recursive_mutex> lock(g_LogMutex);
     fflush(stderr);
-    if (g_pFileLog) {
-        fflush(g_pFileLog);
+    if (fileLog) {
+        fflush(fileLog);
+    }
+}
+
+void Logger::enableFileLog(const char* path)
+{
+    {
+        std::lock_guard<std::mutex> lock(gs_Mutex);
+        if (gs_pFileLog) {
+            fclose(gs_pFileLog);
+        }
+        gs_pFileLog = fopen(path, "w");
+    }
+    if (gs_pFileLog) {
+        log(LogLevel::Info, "Logger", "File logging enabled: %s", path);
+    }
+}
+
+void Logger::disableFileLog()
+{
+    std::lock_guard<std::mutex> lock(gs_Mutex);
+    if (gs_pFileLog) {
+        fclose(gs_pFileLog);
+        gs_pFileLog = nullptr;
     }
 }
 

@@ -1,14 +1,9 @@
 #include "AMEERHIOpenGL.hpp"
+#include "../../../Render/Shader/GL/AMEEGLShader.hpp"
 #define GL_SILENCE_DEPRECATION
-#include <OpenGL/gl.h>
-#include <OpenGL/glext.h>
+#include <OpenGL/gl3.h>
 #include <OpenGL/OpenGL.h>
 #import <AppKit/AppKit.h>
-
-// macOS uses GL_APPLE_vertex_array_object extension
-#define glGenVertexArrays      glGenVertexArraysAPPLE
-#define glDeleteVertexArrays   glDeleteVertexArraysAPPLE
-#define glBindVertexArray      glBindVertexArrayAPPLE
 
 namespace AMEE {
 
@@ -204,6 +199,12 @@ void RHIOpenGL::setTextureWrap(uint32_t id, RHIWrap wrapS, RHIWrap wrapT)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapToGL(wrapS));
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapToGL(wrapT));
     glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+// Shader
+std::unique_ptr<ShaderProgram> RHIOpenGL::CreateShaderProgram()
+{
+    return std::make_unique<GLShaderProgram>();
 }
 
 // Helper methods

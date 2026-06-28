@@ -5,6 +5,7 @@
 #import "../../Render/AMEERHI.hpp"
 #import "../../Platform/macOS/GL/AMEERHIOpenGL.hpp"
 #import "../../Core/Log/AMEELog.hpp"
+#import <AppKit/AppKit.h>
 
 namespace AMEE {
 
@@ -26,6 +27,14 @@ std::unique_ptr<IPlatformLoop> MacosApplication::CreatePlatformGameLoop()
 std::unique_ptr<RHI> MacosApplication::CreateRHI()
 {
     return std::make_unique<RHIOpenGL>();
+}
+
+void MacosApplication::OnWindowShouldClose()
+{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        GetGameLoop()->stop();
+        [NSApp terminate:nil];
+    });
 }
 
 } // namespace AMEE

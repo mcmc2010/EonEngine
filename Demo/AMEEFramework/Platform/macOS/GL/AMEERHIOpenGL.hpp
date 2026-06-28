@@ -2,8 +2,9 @@
 #define __AMEE_RHIOPENGL_H__
 #pragma once
 #include "../../../Render/AMEERHI.hpp"
+#include "../../../Render/Shader/AMEEShaderProgram.hpp"
 #define GL_SILENCE_DEPRECATION
-#include <OpenGL/gl.h>
+#include <OpenGL/gl3.h>
 
 namespace AMEE {
 
@@ -43,6 +44,9 @@ public:
     void bindTexture(uint32_t id, uint32_t slot) override;
     void setTextureFilter(uint32_t id, RHIFilter minFilter, RHIFilter magFilter) override;
     void setTextureWrap(uint32_t id, RHIWrap wrapS, RHIWrap wrapT) override;
+
+    // Shader
+    std::unique_ptr<ShaderProgram> CreateShaderProgram() override;
 
     // Draw
     void drawArrays(RHIPrimitive primitive, uint32_t count, uint32_t offset) override;

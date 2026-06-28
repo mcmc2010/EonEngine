@@ -1,11 +1,16 @@
 #include "AMEEApplication.hpp"
 #include "Log/AMEELog.hpp"
+#include "Asset/AMEEFileSystem.hpp"
 
 namespace AMEE {
 
 bool Application::Init(const ApplicationConfig& config)
 {
     AMEE::Logger::init(AMEE::LogLevel::Debug);
+
+    // Initialize virtual file system (bundle + cwd mount points)
+    FileSystem::Instance().Initialize();
+    FileSystem::Instance().PrintMounts();
 
     // Create platform window
     m_pWindow = CreatePlatformWindow();
@@ -69,26 +74,34 @@ void Application::Shutdown()
     m_pWindow.reset();
 
     AMEE_LOG_INFO("Application", "Shutdown complete");
-    AMEE::Logger::flush();
+    AMEE::Logger::flushAll();
 }
 
 void Application::Run()
 {
-    m_pGameLoop->start([this](double dt, double time) {
-        m_pGLContext->makeCurrent();
+    m_pGameLoop->start(
+        // Render callback
+        [this](double dt, double totalTime) {
+            m_pGLContext->makeCurrent();
 
-        int w, h;
-        m_pGLContext->getSize(w, h);
-        m_pRHI->setViewport({0.0f, 0.0f, (float)w, (float)h});
+            int w, h;
+            m_pGLContext->getSize(w, h);
+            m_pRHI->setViewport({0.0f, 0.0f, (float)w, (float)h});
 
-        OnRender((float)dt, (float)time);
+            OnRender(dt, totalTime);
 
-        m_pGLContext->swapBuffers();
+            m_pGLContext->swapBuffers();
 
-        if (!m_pWindow->pollEvents()) {
-            m_Running = false;
+            if (!m_pWindow->pollEvents()) {
+                m_Running = false;
+                OnWindowShouldClose();
+            }
+        },
+        // Fixed update callback
+        [this](double fixedDt) {
+            OnFixedUpdate((float)fixedDt);
         }
-    });
+    );
 }
 
 } // namespace AMEE
