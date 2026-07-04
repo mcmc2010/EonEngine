@@ -6,7 +6,7 @@
 #include "AMEEFramework/Render/AMEEMesh.hpp"
 #include "AMEEFramework/Render/Shader/AMEEShaderProgram.hpp"
 #include "AMEEFramework/Render/Texture/AMEETexture2D.hpp"
-#include "AMEEFramework/Core/Meshes/AMEEPrimitiveMesh.hpp"
+#include "AMEEFramework/Render/Material/AMEEStandardMaterial.hpp"
 
 namespace AMEE {
 
@@ -22,36 +22,36 @@ bool DemoApp::OnInit()
         return false;
     }
 
-    // Load texture
-    m_TextureHandle = assets.LoadTexture(rhi, "Assets/Textures/04.png");
-    if (!m_TextureHandle.IsValid()) {
-        AMEE_LOG_ERROR("DemoApp", "Failed to load texture");
-        return false;
-    }
-
     // Create scene
     m_pScene = std::make_unique<Scene>();
     m_pScene->SetName("DemoScene");
 
-    // ─── Cube Entity ───────────────────────────────────────────────────────
+    // ─── Model Entity (loaded from OBJ + MTL) ──────────────────────────────
 
-    auto CubeMesh = std::unique_ptr<Mesh>(PrimitiveMesh::CreateCube(rhi, 1.0f));
-    if (!CubeMesh) {
-        AMEE_LOG_ERROR("DemoApp", "Failed to create cube mesh");
+    m_MeshHandle = assets.LoadModel(rhi, "Assets/Models/female01.obj");
+    if (!m_MeshHandle.IsValid()) {
+        AMEE_LOG_ERROR("DemoApp", "Failed to load model");
         return false;
     }
-    m_MeshHandle = assets.RegisterMesh(std::move(CubeMesh), "Cube");
+
+    // Use first material from MTL (has female_01.JPG)
+    m_MaterialHandle = {1};  // First material registered after mesh [0]
+    if (Material* Mat = assets.GetMaterial(m_MaterialHandle)) {
+        Mat->SetShader(m_ShaderHandle);
+        AMEE_LOG_INFO("DemoApp", "Using material: %s", Mat->GetName().c_str());
+        Mat->PrintDebug();
+    }
 
     auto CubeEntity = std::make_unique<Entity>();
-    CubeEntity->SetName("Cube");
+    CubeEntity->SetName("Female01");
     CubeEntity->SetPosition({0, 0, 0});
+    CubeEntity->SetScale({0.02f, 0.02f, 0.02f});
 
     auto* Filter = CubeEntity->AddComponent<MeshFilter>();
     Filter->SetMesh(m_MeshHandle);
 
     m_pCubeRenderer = CubeEntity->AddComponent<MeshRenderer>();
-    m_pCubeRenderer->m_Shader = m_ShaderHandle;
-    m_pCubeRenderer->m_Texture = m_TextureHandle;
+    m_pCubeRenderer->m_Material = m_MaterialHandle;
     m_pCubeEntity = CubeEntity.get();
 
     m_pScene->AddChild(std::move(CubeEntity));
@@ -60,7 +60,7 @@ bool DemoApp::OnInit()
 
     auto CameraEntity = std::make_unique<Entity>();
     CameraEntity->SetName("MainCamera");
-    CameraEntity->SetPosition({0, 0, 3});
+    CameraEntity->SetPosition({0, 1.5f, 4});
 
     m_pCamera = CameraEntity->AddComponent<Camera>(60.0f, 0.1f, 1000.0f);
     m_pCamera->SetRotation(-90.0f, 0);
@@ -114,13 +114,9 @@ void DemoApp::OnFixedUpdate(float fixedDt)
 void DemoApp::OnRender(double deltaTime, double totalTime)
 {
     RHI* rhi = GetRHI();
-    auto& assets = AssetManager::Instance();
 
     rhi->setClearColor(0.15f, 0.15f, 0.2f, 1.0f);
     rhi->clear();
-
-    ShaderProgram* shader = assets.GetShader(m_ShaderHandle);
-    if (!shader) return;
 
     int w, h;
     GetGLContext()->getSize(w, h);
@@ -150,8 +146,8 @@ void DemoApp::OnShutdown()
 
     auto& assets = AssetManager::Instance();
     assets.UnloadShader(m_ShaderHandle);
-    assets.UnloadTexture(m_TextureHandle);
     assets.UnloadMesh(m_MeshHandle);
+    assets.UnloadMaterial(m_MaterialHandle);
 
     AMEE_LOG_INFO("DemoApp", "Demo shutdown");
 }

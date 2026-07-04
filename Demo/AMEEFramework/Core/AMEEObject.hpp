@@ -7,10 +7,12 @@
 
 namespace AMEE {
 
-enum class ObjectType : uint8_t {
+enum class ObjectType {
     Node      = 0,
     Entity    = 1,
     Component = 2,
+    //
+    Resoursce = 100,
 };
 
 class Object {

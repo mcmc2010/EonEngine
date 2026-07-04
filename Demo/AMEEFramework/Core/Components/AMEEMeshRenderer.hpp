@@ -13,8 +13,7 @@ class MeshRenderer : public Component {
 public:
     MeshRenderer() = default;
 
-    ShaderHandle m_Shader;
-    TextureHandle m_Texture;
+    MaterialHandle m_Material;
     bool m_Visible = true;
 
     void Draw(RHI* rhi, const Mat4& ViewProj);

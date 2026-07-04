@@ -5,6 +5,10 @@
 #include "../../Render/Texture/AMEETexture2D.hpp"
 #include "../../Render/Shader/AMEEShaderProgram.hpp"
 #include "../../Render/AMEEMesh.hpp"
+#include "../../Render/Model/AMEEObjLoader.hpp"
+#include "../../Render/Material/AMEEMaterial.hpp"
+#include "../../Render/Material/AMEEStandardMaterial.hpp"
+#include "../../Render/Material/AMEEStandardMaterialImporter.hpp"
 
 namespace AMEE {
 
@@ -145,6 +149,66 @@ MeshHandle AssetManager::RegisterMesh(std::unique_ptr<Mesh> InMesh, const std::s
     return {Idx};
 }
 
+MeshHandle AssetManager::LoadModel(RHI* rhi, const std::string& LogicalPath)
+{
+    if (!rhi) return {};
+
+    std::string Source = FileSystem::Instance().ReadText(LogicalPath);
+    if (Source.empty()) {
+        AMEE_LOG_ERROR("AssetManager", "Failed to read model: %s", LogicalPath.c_str());
+        return {};
+    }
+
+    ModelData Data = ObjLoader::Load(Source);
+    if (Data.Vertices.empty()) {
+        AMEE_LOG_ERROR("AssetManager", "Failed to parse model: %s", LogicalPath.c_str());
+        return {};
+    }
+
+    auto MeshObj = std::make_unique<Mesh>();
+    if (!MeshObj->CreateIndexed(rhi, Data.Vertices.data(),
+                                 (uint32_t)(Data.Vertices.size() / 8),
+                                 Data.Indices.data(), (uint32_t)Data.Indices.size(),
+                                 Data.Layout)) {
+        AMEE_LOG_ERROR("AssetManager", "Failed to create mesh from: %s", LogicalPath.c_str());
+        return {};
+    }
+
+    // Load associated materials from .mtl
+    std::string MtlName = ObjLoader::ExtractMtlLib(Source);
+    if (!MtlName.empty()) {
+        std::string ObjDir = LogicalPath.substr(0, LogicalPath.find_last_of('/') + 1);
+        std::string MtlPath = ObjDir + MtlName;
+        std::string MtlSource = FileSystem::Instance().ReadText(MtlPath);
+
+        if (!MtlSource.empty()) {
+            auto Imported = AMEEStandardMaterialImporter::Parse(MtlSource);
+            AMEE_LOG_INFO("AssetManager", "Model '%s' has %zu materials:", LogicalPath.c_str(), Imported.size());
+
+            for (auto& Imp : Imported) {
+                if (!Imp.DiffuseTexturePath.empty()) {
+                    std::string TexPath = ObjDir + Imp.DiffuseTexturePath;
+                    TextureHandle Tex = LoadTexture(rhi, TexPath);
+                    if (Tex.IsValid()) {
+                        Imp.Material->SetAlbedoMap(Tex);
+                        AMEE_LOG_INFO("AssetManager", "  [%s] → %s ✓", Imp.Name.c_str(), Imp.DiffuseTexturePath.c_str());
+                    } else {
+                        AMEE_LOG_WARN("AssetManager", "  [%s] → %s ✗ (missing)", Imp.Name.c_str(), Imp.DiffuseTexturePath.c_str());
+                    }
+                } else {
+                    AMEE_LOG_INFO("AssetManager", "  [%s] (no texture)", Imp.Name.c_str());
+                }
+
+                RegisterMaterial(std::move(Imp.Material));
+            }
+        } else {
+            AMEE_LOG_WARN("AssetManager", "MTL file not found: %s", MtlPath.c_str());
+        }
+    }
+
+    return RegisterMesh(std::move(MeshObj), LogicalPath);
+}
+
 Mesh* AssetManager::GetMesh(MeshHandle Handle) const
 {
     if (!Handle.IsValid() || Handle.Index >= m_Meshes.size()) return nullptr;
@@ -163,6 +227,35 @@ void AssetManager::UnloadMesh(MeshHandle Handle)
     }
 }
 
+// ─── Material ─────────────────────────────────────────────────────────────────
+
+MaterialHandle AssetManager::RegisterMaterial(std::unique_ptr<Material> InMat)
+{
+    if (!InMat) return {};
+    uint32_t Idx = static_cast<uint32_t>(m_Materials.size());
+    m_Materials.push_back({std::move(InMat), "", 1});
+    AMEE_LOG_INFO("AssetManager", "Registered material [%u]: %s", Idx, m_Materials.back().Resource->GetName().c_str());
+    return {Idx};
+}
+
+Material* AssetManager::GetMaterial(MaterialHandle Handle) const
+{
+    if (!Handle.IsValid() || Handle.Index >= m_Materials.size()) return nullptr;
+    return m_Materials[Handle.Index].Resource.get();
+}
+
+void AssetManager::UnloadMaterial(MaterialHandle Handle)
+{
+    if (!Handle.IsValid() || Handle.Index >= m_Materials.size()) return;
+    auto& Entry = m_Materials[Handle.Index];
+    if (Entry.RefCount == 0) return;
+    Entry.RefCount--;
+    if (Entry.RefCount == 0) {
+        Entry.Resource.reset();
+        AMEE_LOG_INFO("AssetManager", "Unloaded material [%u]", Handle.Index);
+    }
+}
+
 // ─── Bulk ──────────────────────────────────────────────────────────────────────
 
 void AssetManager::UnloadAll()
@@ -170,6 +263,7 @@ void AssetManager::UnloadAll()
     m_Textures.clear();
     m_Shaders.clear();
     m_Meshes.clear();
+    m_Materials.clear();
     AMEE_LOG_INFO("AssetManager", "All assets unloaded");
 }
 

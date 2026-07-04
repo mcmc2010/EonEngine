@@ -17,10 +17,12 @@ struct AssetHandle {
 struct TextureTag {};
 struct ShaderTag {};
 struct MeshTag {};
+struct MaterialTag {};
 
 using TextureHandle = AssetHandle<TextureTag>;
 using ShaderHandle = AssetHandle<ShaderTag>;
 using MeshHandle = AssetHandle<MeshTag>;
+using MaterialHandle = AssetHandle<MaterialTag>;
 
 } // namespace AMEE
 

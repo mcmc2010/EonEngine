@@ -13,6 +13,7 @@ class RHI;
 class Texture2D;
 class ShaderProgram;
 class Mesh;
+class Material;
 
 class AssetManager {
 public:
@@ -33,16 +34,23 @@ public:
 
     // Mesh
     MeshHandle RegisterMesh(std::unique_ptr<Mesh> InMesh, const std::string& Name);
+    MeshHandle LoadModel(RHI* rhi, const std::string& LogicalPath);
     Mesh* GetMesh(MeshHandle Handle) const;
     void UnloadMesh(MeshHandle Handle);
+
+    // Material
+    MaterialHandle RegisterMaterial(std::unique_ptr<Material> InMat);
+    Material* GetMaterial(MaterialHandle Handle) const;
+    void UnloadMaterial(MaterialHandle Handle);
 
     // Bulk
     void UnloadAll();
 
     // Stats
-    size_t GetTextureCount() const { return m_Textures.size(); }
-    size_t GetShaderCount() const  { return m_Shaders.size(); }
-    size_t GetMeshCount() const    { return m_Meshes.size(); }
+    size_t GetTextureCount() const  { return m_Textures.size(); }
+    size_t GetShaderCount() const   { return m_Shaders.size(); }
+    size_t GetMeshCount() const     { return m_Meshes.size(); }
+    size_t GetMaterialCount() const { return m_Materials.size(); }
 
 private:
     AssetManager() = default;
@@ -66,9 +74,16 @@ private:
         uint32_t RefCount = 0;
     };
 
+    struct MaterialEntry {
+        std::unique_ptr<Material> Resource;
+        std::string Name;
+        uint32_t RefCount = 0;
+    };
+
     std::vector<TextureEntry> m_Textures;
     std::vector<ShaderEntry> m_Shaders;
     std::vector<MeshEntry> m_Meshes;
+    std::vector<MaterialEntry> m_Materials;
 };
 
 } // namespace AMEE

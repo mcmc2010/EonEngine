@@ -1,6 +1,7 @@
 #include "AMEEApplication.hpp"
 #include "Log/AMEELog.hpp"
 #include "Asset/AMEEFileSystem.hpp"
+#include "Asset/AMEEAssetManager.hpp"
 
 namespace AMEE {
 
@@ -72,6 +73,8 @@ bool Application::Init(const ApplicationConfig& config)
 void Application::Shutdown()
 {
     OnShutdown();
+
+    AssetManager::Instance().UnloadAll();
 
     m_pGameLoop->stop();
     m_pGLContext->makeCurrent();

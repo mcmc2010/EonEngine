@@ -4,14 +4,14 @@
 #include "../Entity/AMEEEntity.hpp"
 #include "../../Render/AMEERHI.hpp"
 #include "../../Render/AMEEMesh.hpp"
+#include "../../Render/Material/AMEEMaterial.hpp"
 #include "../../Render/Shader/AMEEShaderProgram.hpp"
-#include "../../Render/Texture/AMEETexture2D.hpp"
 
 namespace AMEE {
 
 void MeshRenderer::Draw(RHI* rhi, const Mat4& ViewProj)
 {
-    if (!m_Visible || !rhi) return;
+    if (!m_Visible || !rhi || !m_Material.IsValid()) return;
 
     Entity* Owner = GetOwner();
     if (!Owner) return;
@@ -21,17 +21,14 @@ void MeshRenderer::Draw(RHI* rhi, const Mat4& ViewProj)
 
     auto& Assets = AssetManager::Instance();
     Mesh* Mesh = Assets.GetMesh(Filter->GetMesh());
-    ShaderProgram* Shader = Assets.GetShader(m_Shader);
-    Texture2D* Tex = Assets.GetTexture(m_Texture);
+    Material* Mat = Assets.GetMaterial(m_Material);
 
-    if (!Mesh || !Shader) return;
+    if (!Mesh || !Mat) return;
 
     Mat4 MVP = ViewProj * Owner->GetWorldMatrix();
 
-    Shader->use();
-    if (Tex) Tex->Bind(0);
-    Shader->setInt("uTexture", 0);
-    Shader->setMat4("uMVP", MVP.Data());
+    Mat->Apply(rhi);
+    Assets.GetShader(Mat->GetShader())->setMat4("uMVP", MVP.Data());
 
     Mesh->Draw();
 }

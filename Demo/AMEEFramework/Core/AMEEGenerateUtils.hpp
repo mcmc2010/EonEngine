@@ -6,7 +6,7 @@
 
 namespace AMEE {
 
-enum class IDType : uint8_t {
+enum class IDType {
     Node      = 0,
     Entity    = 1,
     Component = 2,
