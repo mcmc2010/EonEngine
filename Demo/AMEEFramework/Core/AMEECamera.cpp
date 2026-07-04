@@ -1,47 +1,22 @@
 #include "AMEECamera.hpp"
+#include "Entity/AMEEEntity.hpp"
 #include <cmath>
 
 namespace AMEE {
 
 Camera::Camera(float FovDeg, float Near, float Far)
-    : m_Position(0, 0, 0)
-    , m_Yaw(-90.0f)
-    , m_Pitch(0)
-    , m_FovDeg(FovDeg)
+    : m_FovDeg(FovDeg)
     , m_Near(Near)
     , m_Far(Far)
 {
-}
-
-void Camera::SetPosition(const Vec3& Pos)
-{
-    m_Position = Pos;
 }
 
 void Camera::SetRotation(float Yaw, float Pitch)
 {
     m_Yaw = Yaw;
     m_Pitch = Pitch;
-}
-
-void Camera::Move(const Vec3& Offset)
-{
-    m_Position = m_Position + Offset;
-}
-
-void Camera::MoveForward(float Amount)
-{
-    m_Position = m_Position + GetForward() * Amount;
-}
-
-void Camera::MoveRight(float Amount)
-{
-    m_Position = m_Position + GetRight() * Amount;
-}
-
-void Camera::MoveUp(float Amount)
-{
-    m_Position = m_Position + Vec3(0, Amount, 0);
+    if (m_Pitch > 89.0f) m_Pitch = 89.0f;
+    if (m_Pitch < -89.0f) m_Pitch = -89.0f;
 }
 
 void Camera::Rotate(float YawDelta, float PitchDelta)
@@ -54,7 +29,8 @@ void Camera::Rotate(float YawDelta, float PitchDelta)
 
 Mat4 Camera::GetViewMatrix() const
 {
-    return Mat4::LookAt(m_Position, m_Position + GetForward(), Vec3(0, 1, 0));
+    Vec3 Pos = GetOwner() ? GetOwner()->GetPosition() : Vec3(0);
+    return Mat4::LookAt(Pos, Pos + GetForward(), Vec3(0, 1, 0));
 }
 
 Mat4 Camera::GetProjectionMatrix(float Aspect) const
@@ -64,22 +40,22 @@ Mat4 Camera::GetProjectionMatrix(float Aspect) const
 
 Vec3 Camera::GetForward() const
 {
-    float yawRad = m_Yaw * DEG2RAD;
-    float pitchRad = m_Pitch * DEG2RAD;
+    float YawRad = m_Yaw * DEG2RAD;
+    float PitchRad = m_Pitch * DEG2RAD;
     return {
-        std::cos(pitchRad) * std::cos(yawRad),
-        std::sin(pitchRad),
-        std::cos(pitchRad) * std::sin(yawRad)
+        std::cos(PitchRad) * std::cos(YawRad),
+        std::sin(PitchRad),
+        std::cos(PitchRad) * std::sin(YawRad)
     };
 }
 
 Vec3 Camera::GetRight() const
 {
-    float yawRad = m_Yaw * DEG2RAD;
+    float YawRad = m_Yaw * DEG2RAD;
     return {
-        std::sin(yawRad),
+        std::sin(YawRad),
         0,
-        -std::cos(yawRad)
+        -std::cos(YawRad)
     };
 }
 

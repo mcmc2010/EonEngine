@@ -5,6 +5,7 @@
 #include "AMEEFramework/Platform/macOS/AMEEMacosApplication.hpp"
 #include "AMEEFramework/Core/Asset/AMEEAssetHandle.hpp"
 #include "AMEEFramework/Core/AMEECamera.hpp"
+#include "AMEEFramework/Core/Entity/AMEEEntity.hpp"
 #include "AMEEFramework/Render/AMEEMesh.hpp"
 #include "AMEEFramework/Core/Math/AMEEMath.hpp"
 #include "AMEEFramework/Core/Log/AMEELog.hpp"
@@ -23,7 +24,11 @@ private:
     ShaderHandle m_ShaderHandle;
     std::unique_ptr<Mesh> m_pQuad;
     TextureHandle m_TextureHandle;
-    Camera m_Camera;
+
+    // Camera
+    std::unique_ptr<Entity> m_pCameraEntity;
+    Camera* m_pCamera = nullptr;
+
     double m_Angle = 0;
     bool m_CaptureMouse = false;
 };

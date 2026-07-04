@@ -29,7 +29,6 @@ bool DemoApp::OnInit()
 
     // Create quad with UV coordinates
     float quadVertices[] = {
-        // position (x,y,z)      // texcoord (u,v)
         -0.8f, -0.8f, 0.0f,      0.0f, 0.0f,
          0.8f, -0.8f, 0.0f,      1.0f, 0.0f,
          0.8f,  0.8f, 0.0f,      1.0f, 1.0f,
@@ -47,9 +46,13 @@ bool DemoApp::OnInit()
         return false;
     }
 
-    // Init camera
-    m_Camera.SetPosition({0, 0, 3});
-    m_Camera.SetRotation(-90.0f, 0);
+    // Create camera entity with camera component
+    m_pCameraEntity = std::make_unique<Entity>();
+    m_pCameraEntity->SetName("MainCamera");
+    m_pCameraEntity->SetPosition({0, 0, 3});
+
+    m_pCamera = m_pCameraEntity->AddComponent<Camera>(60.0f, 0.1f, 1000.0f);
+    m_pCamera->SetRotation(-90.0f, 0);
 
     AMEE_LOG_INFO("DemoApp", "Demo initialized (WASD move, hold RMB + drag to look)");
     return true;
@@ -58,7 +61,7 @@ bool DemoApp::OnInit()
 void DemoApp::OnFixedUpdate(float fixedDt)
 {
     IPlatformInput* input = GetInput();
-    if (!input) return;
+    if (!input || !m_pCamera || !m_pCameraEntity) return;
 
     float MoveSpeed = 3.0f;
     float LookSpeed = 0.15f;
@@ -74,15 +77,18 @@ void DemoApp::OnFixedUpdate(float fixedDt)
     if (m_CaptureMouse) {
         float dx, dy;
         input->GetMouseDelta(dx, dy);
-        m_Camera.Rotate(dx * LookSpeed, -dy * LookSpeed);
+        m_pCamera->Rotate(dx * LookSpeed, -dy * LookSpeed);
     }
 
-    if (input->IsKeyDown(KeyCode::W)) m_Camera.MoveForward( MoveSpeed * fixedDt);
-    if (input->IsKeyDown(KeyCode::S)) m_Camera.MoveForward(-MoveSpeed * fixedDt);
-    if (input->IsKeyDown(KeyCode::A)) m_Camera.MoveRight(  -MoveSpeed * fixedDt);
-    if (input->IsKeyDown(KeyCode::D)) m_Camera.MoveRight(   MoveSpeed * fixedDt);
-    if (input->IsKeyDown(KeyCode::Q)) m_Camera.MoveUp(     -MoveSpeed * fixedDt);
-    if (input->IsKeyDown(KeyCode::E)) m_Camera.MoveUp(      MoveSpeed * fixedDt);
+    // Movement uses Entity position
+    Vec3 Pos = m_pCameraEntity->GetPosition();
+    if (input->IsKeyDown(KeyCode::W)) Pos = Pos + m_pCamera->GetForward() * (MoveSpeed * fixedDt);
+    if (input->IsKeyDown(KeyCode::S)) Pos = Pos + m_pCamera->GetForward() * (-MoveSpeed * fixedDt);
+    if (input->IsKeyDown(KeyCode::A)) Pos = Pos + m_pCamera->GetRight() * (-MoveSpeed * fixedDt);
+    if (input->IsKeyDown(KeyCode::D)) Pos = Pos + m_pCamera->GetRight() * (MoveSpeed * fixedDt);
+    if (input->IsKeyDown(KeyCode::Q)) Pos.y -= MoveSpeed * fixedDt;
+    if (input->IsKeyDown(KeyCode::E)) Pos.y += MoveSpeed * fixedDt;
+    m_pCameraEntity->SetPosition(Pos);
 }
 
 void DemoApp::OnRender(double deltaTime, double totalTime)
@@ -106,8 +112,8 @@ void DemoApp::OnRender(double deltaTime, double totalTime)
     m_Angle += deltaTime * 45.0;
     Mat4 model = Mat4::RotateY((float)m_Angle);
 
-    Mat4 view = m_Camera.GetViewMatrix();
-    Mat4 proj = m_Camera.GetProjectionMatrix(aspect);
+    Mat4 view = m_pCamera->GetViewMatrix();
+    Mat4 proj = m_pCamera->GetProjectionMatrix(aspect);
     Mat4 mvp = proj * view * model;
 
     shader->use();
@@ -120,6 +126,7 @@ void DemoApp::OnRender(double deltaTime, double totalTime)
 void DemoApp::OnShutdown()
 {
     m_pQuad.reset();
+    m_pCameraEntity.reset();
 
     auto& assets = AssetManager::Instance();
     assets.UnloadShader(m_ShaderHandle);

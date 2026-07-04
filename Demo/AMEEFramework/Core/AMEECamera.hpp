@@ -2,37 +2,36 @@
 #define __AMEE_CAMERA_H__
 #pragma once
 #include "Math/AMEEMath.hpp"
+#include "Components/AMEEComponent.hpp"
 
 namespace AMEE {
 
-class Camera {
+class Camera : public Component {
 public:
     Camera(float FovDeg = 60.0f, float Near = 0.1f, float Far = 1000.0f);
 
-    void SetPosition(const Vec3& Pos);
-    void SetRotation(float Yaw, float Pitch);
-
-    Vec3 GetPosition() const { return m_Position; }
+    // Rotation (stored in component, syncs to Entity)
     float GetYaw() const { return m_Yaw; }
     float GetPitch() const { return m_Pitch; }
-
-    void Move(const Vec3& Offset);
-    void MoveForward(float Amount);
-    void MoveRight(float Amount);
-    void MoveUp(float Amount);
+    void SetRotation(float Yaw, float Pitch);
     void Rotate(float YawDelta, float PitchDelta);
 
+    // Projection
+    float GetFov() const { return m_FovDeg; }
+    void SetFov(float FovDeg) { m_FovDeg = FovDeg; }
+
+    // Matrices (uses Owner Entity's position)
     Mat4 GetViewMatrix() const;
     Mat4 GetProjectionMatrix(float Aspect) const;
 
+    // Direction vectors (based on Yaw/Pitch)
     Vec3 GetForward() const;
     Vec3 GetRight() const;
     Vec3 GetUp() const;
 
 private:
-    Vec3 m_Position;
-    float m_Yaw;
-    float m_Pitch;
+    float m_Yaw    = -90.0f;
+    float m_Pitch  = 0.0f;
     float m_FovDeg;
     float m_Near;
     float m_Far;
