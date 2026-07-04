@@ -10,6 +10,8 @@ enum class IDType : uint8_t {
     Node      = 0,
     Entity    = 1,
     Component = 2,
+    //
+    Resource = 7,
 };
 
 class IDGenerator {
