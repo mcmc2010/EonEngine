@@ -3,6 +3,7 @@
 #include "AMEEFramework/Core/Platform/IAMEEPlatformInput.hpp"
 #include "AMEEFramework/Core/Log/AMEELog.hpp"
 #include "AMEEFramework/Render/AMEERHI.hpp"
+#include "AMEEFramework/Render/AMEEMesh.hpp"
 #include "AMEEFramework/Render/Shader/AMEEShaderProgram.hpp"
 #include "AMEEFramework/Render/Texture/AMEETexture2D.hpp"
 
@@ -27,7 +28,12 @@ bool DemoApp::OnInit()
         return false;
     }
 
-    // Create quad with UV coordinates
+    // Create scene
+    m_pScene = std::make_unique<Scene>();
+    m_pScene->SetName("DemoScene");
+
+    // ─── Quad Entity ───────────────────────────────────────────────────────
+
     float quadVertices[] = {
         -0.8f, -0.8f, 0.0f,      0.0f, 0.0f,
          0.8f, -0.8f, 0.0f,      1.0f, 0.0f,
@@ -40,21 +46,41 @@ bool DemoApp::OnInit()
     quadLayout.Add(0, 3, RHIDataType::Float)
               .Add(2, 2, RHIDataType::Float);
 
-    m_pQuad = std::make_unique<Mesh>();
-    if (!m_pQuad->CreateIndexed(rhi, quadVertices, 4, quadIndices, 6, quadLayout)) {
+    auto quadMesh = std::make_unique<Mesh>();
+    if (!quadMesh->CreateIndexed(rhi, quadVertices, 4, quadIndices, 6, quadLayout)) {
         AMEE_LOG_ERROR("DemoApp", "Failed to create quad mesh");
         return false;
     }
+    m_MeshHandle = assets.RegisterMesh(std::move(quadMesh), "Quad");
 
-    // Create camera entity with camera component
-    m_pCameraEntity = std::make_unique<Entity>();
-    m_pCameraEntity->SetName("MainCamera");
-    m_pCameraEntity->SetPosition({0, 0, 3});
+    auto QuadEntity = std::make_unique<Entity>();
+    QuadEntity->SetName("Quad");
+    QuadEntity->SetPosition({0, 0, 0});
 
-    m_pCamera = m_pCameraEntity->AddComponent<Camera>(60.0f, 0.1f, 1000.0f);
+    auto* Filter = QuadEntity->AddComponent<MeshFilter>();
+    Filter->SetMesh(m_MeshHandle);
+
+    m_pQuadRenderer = QuadEntity->AddComponent<MeshRenderer>();
+    m_pQuadRenderer->m_Shader = m_ShaderHandle;
+    m_pQuadRenderer->m_Texture = m_TextureHandle;
+    m_pQuadEntity = QuadEntity.get();
+
+    m_pScene->AddChild(std::move(QuadEntity));
+
+    // ─── Camera Entity ─────────────────────────────────────────────────────
+
+    auto CameraEntity = std::make_unique<Entity>();
+    CameraEntity->SetName("MainCamera");
+    CameraEntity->SetPosition({0, 0, 3});
+
+    m_pCamera = CameraEntity->AddComponent<Camera>(60.0f, 0.1f, 1000.0f);
     m_pCamera->SetRotation(-90.0f, 0);
+    m_pCameraEntity = CameraEntity.get();
 
-    AMEE_LOG_INFO("DemoApp", "Demo initialized (WASD move, hold RMB + drag to look)");
+    m_pScene->AddChild(std::move(CameraEntity));
+
+    AMEE_LOG_INFO("DemoApp", "Scene '%s' ready (%zu entities)",
+                  m_pScene->GetName().c_str(), m_pScene->GetChildCount());
     return true;
 }
 
@@ -66,7 +92,6 @@ void DemoApp::OnFixedUpdate(float fixedDt)
     float MoveSpeed = 3.0f;
     float LookSpeed = 0.15f;
 
-    // Right mouse toggles mouse look
     if (input->IsMouseButtonPressed(MouseButton::Right)) {
         m_CaptureMouse = true;
     }
@@ -80,7 +105,6 @@ void DemoApp::OnFixedUpdate(float fixedDt)
         m_pCamera->Rotate(dx * LookSpeed, -dy * LookSpeed);
     }
 
-    // Movement uses Entity position
     Vec3 Pos = m_pCameraEntity->GetPosition();
     if (input->IsKeyDown(KeyCode::W)) Pos = Pos + m_pCamera->GetForward() * (MoveSpeed * fixedDt);
     if (input->IsKeyDown(KeyCode::S)) Pos = Pos + m_pCamera->GetForward() * (-MoveSpeed * fixedDt);
@@ -89,6 +113,8 @@ void DemoApp::OnFixedUpdate(float fixedDt)
     if (input->IsKeyDown(KeyCode::Q)) Pos.y -= MoveSpeed * fixedDt;
     if (input->IsKeyDown(KeyCode::E)) Pos.y += MoveSpeed * fixedDt;
     m_pCameraEntity->SetPosition(Pos);
+
+    m_pScene->Update(fixedDt);
 }
 
 void DemoApp::OnRender(double deltaTime, double totalTime)
@@ -99,38 +125,39 @@ void DemoApp::OnRender(double deltaTime, double totalTime)
     rhi->setClearColor(0.15f, 0.15f, 0.2f, 1.0f);
     rhi->clear();
 
-    Texture2D* tex = assets.GetTexture(m_TextureHandle);
     ShaderProgram* shader = assets.GetShader(m_ShaderHandle);
-    if (!tex || !shader) return;
-
-    tex->Bind(0);
+    if (!shader) return;
 
     int w, h;
     GetGLContext()->getSize(w, h);
     float aspect = (float)w / (float)h;
 
-    m_Angle += deltaTime * 45.0;
-    Mat4 model = Mat4::RotateY((float)m_Angle);
+    Mat4 View = m_pCamera->GetViewMatrix();
+    Mat4 Proj = m_pCamera->GetProjectionMatrix(aspect);
+    Mat4 VP = Proj * View;
 
-    Mat4 view = m_pCamera->GetViewMatrix();
-    Mat4 proj = m_pCamera->GetProjectionMatrix(aspect);
-    Mat4 mvp = proj * view * model;
-
-    shader->use();
-    shader->setMat4("uMVP", mvp.Data());
-    shader->setInt("uTexture", 0);
-
-    m_pQuad->Draw();
+    // Iterate scene and render all MeshRenderers
+    for (auto& Child : m_pScene->GetChildren()) {
+        if (auto* Ent = dynamic_cast<Entity*>(Child.get())) {
+            if (auto* Renderer = Ent->GetComponent<MeshRenderer>()) {
+                Renderer->Draw(rhi, VP);
+            }
+        }
+    }
 }
 
 void DemoApp::OnShutdown()
 {
-    m_pQuad.reset();
-    m_pCameraEntity.reset();
+    m_pScene.reset();
+    m_pCameraEntity = nullptr;
+    m_pCamera = nullptr;
+    m_pQuadEntity = nullptr;
+    m_pQuadRenderer = nullptr;
 
     auto& assets = AssetManager::Instance();
     assets.UnloadShader(m_ShaderHandle);
     assets.UnloadTexture(m_TextureHandle);
+    assets.UnloadMesh(m_MeshHandle);
 
     AMEE_LOG_INFO("DemoApp", "Demo shutdown");
 }

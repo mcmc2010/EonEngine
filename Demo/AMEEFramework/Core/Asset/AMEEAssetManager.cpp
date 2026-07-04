@@ -4,6 +4,7 @@
 #include "../../Render/AMEERHI.hpp"
 #include "../../Render/Texture/AMEETexture2D.hpp"
 #include "../../Render/Shader/AMEEShaderProgram.hpp"
+#include "../../Render/AMEEMesh.hpp"
 
 namespace AMEE {
 
@@ -133,12 +134,42 @@ void AssetManager::UnloadShader(ShaderHandle Handle)
     }
 }
 
+// ─── Mesh ──────────────────────────────────────────────────────────────────────
+
+MeshHandle AssetManager::RegisterMesh(std::unique_ptr<Mesh> InMesh, const std::string& Name)
+{
+    if (!InMesh) return {};
+    uint32_t Idx = static_cast<uint32_t>(m_Meshes.size());
+    m_Meshes.push_back({std::move(InMesh), Name, 1});
+    AMEE_LOG_INFO("AssetManager", "Registered mesh [%u]: %s", Idx, Name.c_str());
+    return {Idx};
+}
+
+Mesh* AssetManager::GetMesh(MeshHandle Handle) const
+{
+    if (!Handle.IsValid() || Handle.Index >= m_Meshes.size()) return nullptr;
+    return m_Meshes[Handle.Index].Resource.get();
+}
+
+void AssetManager::UnloadMesh(MeshHandle Handle)
+{
+    if (!Handle.IsValid() || Handle.Index >= m_Meshes.size()) return;
+    auto& Entry = m_Meshes[Handle.Index];
+    if (Entry.RefCount == 0) return;
+    Entry.RefCount--;
+    if (Entry.RefCount == 0) {
+        Entry.Resource.reset();
+        AMEE_LOG_INFO("AssetManager", "Unloaded mesh [%u]: %s", Handle.Index, Entry.Name.c_str());
+    }
+}
+
 // ─── Bulk ──────────────────────────────────────────────────────────────────────
 
 void AssetManager::UnloadAll()
 {
     m_Textures.clear();
     m_Shaders.clear();
+    m_Meshes.clear();
     AMEE_LOG_INFO("AssetManager", "All assets unloaded");
 }
 

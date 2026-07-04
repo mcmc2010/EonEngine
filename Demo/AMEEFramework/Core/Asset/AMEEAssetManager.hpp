@@ -12,6 +12,7 @@ namespace AMEE {
 class RHI;
 class Texture2D;
 class ShaderProgram;
+class Mesh;
 
 class AssetManager {
 public:
@@ -30,12 +31,18 @@ public:
     ShaderProgram* GetShader(ShaderHandle Handle) const;
     void UnloadShader(ShaderHandle Handle);
 
+    // Mesh
+    MeshHandle RegisterMesh(std::unique_ptr<Mesh> InMesh, const std::string& Name);
+    Mesh* GetMesh(MeshHandle Handle) const;
+    void UnloadMesh(MeshHandle Handle);
+
     // Bulk
     void UnloadAll();
 
     // Stats
     size_t GetTextureCount() const { return m_Textures.size(); }
     size_t GetShaderCount() const  { return m_Shaders.size(); }
+    size_t GetMeshCount() const    { return m_Meshes.size(); }
 
 private:
     AssetManager() = default;
@@ -53,8 +60,15 @@ private:
         uint32_t RefCount = 0;
     };
 
+    struct MeshEntry {
+        std::unique_ptr<Mesh> Resource;
+        std::string Name;
+        uint32_t RefCount = 0;
+    };
+
     std::vector<TextureEntry> m_Textures;
     std::vector<ShaderEntry> m_Shaders;
+    std::vector<MeshEntry> m_Meshes;
 };
 
 } // namespace AMEE

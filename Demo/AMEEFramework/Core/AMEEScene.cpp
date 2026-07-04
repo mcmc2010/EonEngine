@@ -3,16 +3,6 @@
 
 namespace AMEE {
 
-void Scene::AddEntity(std::unique_ptr<Entity> Ent)
-{
-    AddChild(std::move(Ent));
-}
-
-void Scene::RemoveEntity(Entity* Ent)
-{
-    RemoveChild(Ent);
-}
-
 void Scene::Update(float DeltaTime)
 {
     for (auto& Child : GetChildren()) {
