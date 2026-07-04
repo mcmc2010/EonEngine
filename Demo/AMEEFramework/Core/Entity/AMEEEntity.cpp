@@ -20,8 +20,12 @@ Mat4 Entity::GetWorldMatrix() const
 
 void Entity::Update(float DeltaTime)
 {
-    // Default: do nothing, override in subclass
-    (void)DeltaTime;
+    // Update all components
+    for (auto& Comp : m_Components) {
+        if (Comp && Comp->GetOwner() == this) {
+            Comp->Update(DeltaTime);
+        }
+    }
 }
 
 } // namespace AMEE
