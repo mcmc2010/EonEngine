@@ -1,5 +1,6 @@
 #include "DemoApp.hpp"
 #include "AMEEFramework/Core/Asset/AMEEAssetManager.hpp"
+#include "AMEEFramework/Core/Platform/IAMEEPlatformInput.hpp"
 #include "AMEEFramework/Core/Log/AMEELog.hpp"
 #include "AMEEFramework/Render/AMEERHI.hpp"
 #include "AMEEFramework/Render/Shader/AMEEShaderProgram.hpp"
@@ -46,19 +47,42 @@ bool DemoApp::OnInit()
         return false;
     }
 
-    AMEE_LOG_INFO("DemoApp", "Demo initialized (textured quad, %zu textures, %zu shaders)",
-                  assets.GetTextureCount(), assets.GetShaderCount());
+    // Init camera
+    m_Camera.SetPosition({0, 0, 3});
+    m_Camera.SetRotation(-90.0f, 0);
+
+    AMEE_LOG_INFO("DemoApp", "Demo initialized (WASD move, hold RMB + drag to look)");
     return true;
 }
 
 void DemoApp::OnFixedUpdate(float fixedDt)
 {
-    static int s_TickCount = 0;
-    s_TickCount++;
-    if (s_TickCount % 60 == 0) {
-        AMEE_LOG_INFO("DemoApp", "FixedUpdate: %d ticks (%.2f dt)",
-                      s_TickCount, fixedDt);
+    IPlatformInput* input = GetInput();
+    if (!input) return;
+
+    float MoveSpeed = 3.0f;
+    float LookSpeed = 0.15f;
+
+    // Right mouse toggles mouse look
+    if (input->IsMouseButtonPressed(MouseButton::Right)) {
+        m_CaptureMouse = true;
     }
+    if (input->IsMouseButtonReleased(MouseButton::Right)) {
+        m_CaptureMouse = false;
+    }
+
+    if (m_CaptureMouse) {
+        float dx, dy;
+        input->GetMouseDelta(dx, dy);
+        m_Camera.Rotate(dx * LookSpeed, -dy * LookSpeed);
+    }
+
+    if (input->IsKeyDown(KeyCode::W)) m_Camera.MoveForward( MoveSpeed * fixedDt);
+    if (input->IsKeyDown(KeyCode::S)) m_Camera.MoveForward(-MoveSpeed * fixedDt);
+    if (input->IsKeyDown(KeyCode::A)) m_Camera.MoveRight(  -MoveSpeed * fixedDt);
+    if (input->IsKeyDown(KeyCode::D)) m_Camera.MoveRight(   MoveSpeed * fixedDt);
+    if (input->IsKeyDown(KeyCode::Q)) m_Camera.MoveUp(     -MoveSpeed * fixedDt);
+    if (input->IsKeyDown(KeyCode::E)) m_Camera.MoveUp(      MoveSpeed * fixedDt);
 }
 
 void DemoApp::OnRender(double deltaTime, double totalTime)
@@ -75,17 +99,15 @@ void DemoApp::OnRender(double deltaTime, double totalTime)
 
     tex->Bind(0);
 
-    m_Angle += deltaTime * 45.0;
-    Mat4 model = Mat4::RotateY((float)m_Angle);
-
     int w, h;
     GetGLContext()->getSize(w, h);
     float aspect = (float)w / (float)h;
 
-    Mat4 view = Mat4::LookAt({0.0f, 0.0f, 2.5f},
-                              {0.0f, 0.0f, 0.0f},
-                              {0.0f, 1.0f, 0.0f});
-    Mat4 proj = Mat4::Perspective(45.0f, aspect, 0.1f, 100.0f);
+    m_Angle += deltaTime * 45.0;
+    Mat4 model = Mat4::RotateY((float)m_Angle);
+
+    Mat4 view = m_Camera.GetViewMatrix();
+    Mat4 proj = m_Camera.GetProjectionMatrix(aspect);
     Mat4 mvp = proj * view * model;
 
     shader->use();

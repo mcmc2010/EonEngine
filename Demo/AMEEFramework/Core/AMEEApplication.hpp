@@ -4,6 +4,7 @@
 #include "Platform/IAMEEPlatformWindow.hpp"
 #include "Platform/IAMEEPlatformGLContext.hpp"
 #include "Platform/IAMEEPlatformLoop.hpp"
+#include "Platform/IAMEEPlatformInput.hpp"
 #include "../Render/AMEERHI.hpp"
 #include "../Render/Shader/AMEEShaderProgram.hpp"
 #include <memory>
@@ -33,6 +34,7 @@ public:
     IPlatformWindow* GetWindow() const { return m_pWindow.get(); }
     IPlatformGLContext* GetGLContext() const { return m_pGLContext.get(); }
     IPlatformLoop* GetGameLoop() const { return m_pGameLoop.get(); }
+    IPlatformInput* GetInput() const { return m_pInput.get(); }
     RHI* GetRHI() const { return m_pRHI.get(); }
 
 protected:
@@ -47,12 +49,14 @@ protected:
     virtual std::unique_ptr<IPlatformWindow> CreatePlatformWindow() = 0;
     virtual std::unique_ptr<IPlatformGLContext> CreatePlatformGLContext() = 0;
     virtual std::unique_ptr<IPlatformLoop> CreatePlatformGameLoop() = 0;
+    virtual std::unique_ptr<IPlatformInput> CreatePlatformInput() = 0;
     virtual std::unique_ptr<RHI> CreateRHI() = 0;
 
 private:
     std::unique_ptr<IPlatformWindow> m_pWindow;
     std::unique_ptr<IPlatformGLContext> m_pGLContext;
     std::unique_ptr<IPlatformLoop> m_pGameLoop;
+    std::unique_ptr<IPlatformInput> m_pInput;
     std::unique_ptr<RHI> m_pRHI;
     bool m_Running = false;
 };

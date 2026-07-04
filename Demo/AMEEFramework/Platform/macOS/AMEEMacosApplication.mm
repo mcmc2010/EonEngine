@@ -2,6 +2,7 @@
 #import "AMEEMacosWindow.hpp"
 #import "AMEEMacosGLContext.hpp"
 #import "AMEEMacosGameLoop.hpp"
+#import "AMEEMacosInput.hpp"
 #import "../../Render/AMEERHI.hpp"
 #import "../../Platform/macOS/GL/AMEERHIOpenGL.hpp"
 #import "../../Core/Log/AMEELog.hpp"
@@ -22,6 +23,11 @@ std::unique_ptr<IPlatformGLContext> MacosApplication::CreatePlatformGLContext()
 std::unique_ptr<IPlatformLoop> MacosApplication::CreatePlatformGameLoop()
 {
     return std::make_unique<MacosGameLoop>();
+}
+
+std::unique_ptr<IPlatformInput> MacosApplication::CreatePlatformInput()
+{
+    return std::make_unique<MacosInput>();
 }
 
 std::unique_ptr<RHI> MacosApplication::CreateRHI()

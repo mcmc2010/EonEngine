@@ -57,6 +57,13 @@ bool Application::Init(const ApplicationConfig& config)
         return false;
     }
 
+    // Create input
+    m_pInput = CreatePlatformInput();
+    if (!m_pInput) {
+        AMEE_LOG_ERROR("Application", "Failed to create input");
+        return false;
+    }
+
     m_Running = true;
     AMEE_LOG_INFO("Application", "Initialized (%dx%d)", config.Width, config.Height);
     return true;
@@ -69,6 +76,7 @@ void Application::Shutdown()
     m_pGameLoop->stop();
     m_pGLContext->makeCurrent();
 
+    m_pInput.reset();
     m_pRHI.reset();
     m_pGLContext.reset();
     m_pWindow.reset();
@@ -82,6 +90,8 @@ void Application::Run()
     m_pGameLoop->start(
         // Render callback
         [this](double dt, double totalTime) {
+            m_pInput->Update();
+
             m_pGLContext->makeCurrent();
 
             int w, h;
