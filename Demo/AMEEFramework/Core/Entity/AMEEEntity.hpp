@@ -13,7 +13,7 @@ namespace AMEE {
 
 class Entity : public Node, public Object {
 public:
-    Entity() = default;
+    Entity() : Object(IDType::Entity) {}
     virtual ~Entity() = default;
 
     // Transform

@@ -9,7 +9,7 @@ class Entity;
 
 class Component : public Object {
 public:
-    Component() = default;
+    Component() : Object(IDType::Component) {}
     virtual ~Component() = default;
 
     // Owner

@@ -2,8 +2,9 @@
 
 namespace AMEE {
 
-Object::Object()
-    : m_ID(IDGenerator::Generate(IDType::Node))
+Object::Object(IDType Type)
+    : m_Type(Type)
+    , m_ID(IDGenerator::Generate(Type))
 {
 }
 
