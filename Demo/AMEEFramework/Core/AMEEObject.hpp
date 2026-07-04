@@ -1,12 +1,13 @@
 #ifndef __AMEE_OBJECT_H__
 #define __AMEE_OBJECT_H__
 #pragma once
+#include "AMEENode.hpp"
 #include <cstdint>
 #include <string>
 
 namespace AMEE {
 
-class Object {
+class Object : public Node {
 public:
     Object();
     virtual ~Object() = default;

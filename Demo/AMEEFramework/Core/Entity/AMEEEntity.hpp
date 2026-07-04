@@ -7,7 +7,7 @@
 
 namespace AMEE {
 
-class Entity : public Node, public Object {
+class Entity : public Object {
 public:
     Entity() = default;
     virtual ~Entity() = default;
