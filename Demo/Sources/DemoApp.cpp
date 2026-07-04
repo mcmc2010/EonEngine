@@ -6,6 +6,7 @@
 #include "AMEEFramework/Render/AMEEMesh.hpp"
 #include "AMEEFramework/Render/Shader/AMEEShaderProgram.hpp"
 #include "AMEEFramework/Render/Texture/AMEETexture2D.hpp"
+#include "AMEEFramework/Core/Meshes/AMEEPrimitiveMesh.hpp"
 
 namespace AMEE {
 
@@ -32,40 +33,28 @@ bool DemoApp::OnInit()
     m_pScene = std::make_unique<Scene>();
     m_pScene->SetName("DemoScene");
 
-    // ─── Quad Entity ───────────────────────────────────────────────────────
+    // ─── Cube Entity ───────────────────────────────────────────────────────
 
-    float quadVertices[] = {
-        -0.8f, -0.8f, 0.0f,      0.0f, 0.0f,
-         0.8f, -0.8f, 0.0f,      1.0f, 0.0f,
-         0.8f,  0.8f, 0.0f,      1.0f, 1.0f,
-        -0.8f,  0.8f, 0.0f,      0.0f, 1.0f,
-    };
-    uint32_t quadIndices[] = { 0, 1, 2, 0, 2, 3 };
-
-    VertexLayout quadLayout;
-    quadLayout.Add(0, 3, RHIDataType::Float)
-              .Add(2, 2, RHIDataType::Float);
-
-    auto quadMesh = std::make_unique<Mesh>();
-    if (!quadMesh->CreateIndexed(rhi, quadVertices, 4, quadIndices, 6, quadLayout)) {
-        AMEE_LOG_ERROR("DemoApp", "Failed to create quad mesh");
+    auto CubeMesh = std::unique_ptr<Mesh>(PrimitiveMesh::CreateCube(rhi, 1.0f));
+    if (!CubeMesh) {
+        AMEE_LOG_ERROR("DemoApp", "Failed to create cube mesh");
         return false;
     }
-    m_MeshHandle = assets.RegisterMesh(std::move(quadMesh), "Quad");
+    m_MeshHandle = assets.RegisterMesh(std::move(CubeMesh), "Cube");
 
-    auto QuadEntity = std::make_unique<Entity>();
-    QuadEntity->SetName("Quad");
-    QuadEntity->SetPosition({0, 0, 0});
+    auto CubeEntity = std::make_unique<Entity>();
+    CubeEntity->SetName("Cube");
+    CubeEntity->SetPosition({0, 0, 0});
 
-    auto* Filter = QuadEntity->AddComponent<MeshFilter>();
+    auto* Filter = CubeEntity->AddComponent<MeshFilter>();
     Filter->SetMesh(m_MeshHandle);
 
-    m_pQuadRenderer = QuadEntity->AddComponent<MeshRenderer>();
-    m_pQuadRenderer->m_Shader = m_ShaderHandle;
-    m_pQuadRenderer->m_Texture = m_TextureHandle;
-    m_pQuadEntity = QuadEntity.get();
+    m_pCubeRenderer = CubeEntity->AddComponent<MeshRenderer>();
+    m_pCubeRenderer->m_Shader = m_ShaderHandle;
+    m_pCubeRenderer->m_Texture = m_TextureHandle;
+    m_pCubeEntity = CubeEntity.get();
 
-    m_pScene->AddChild(std::move(QuadEntity));
+    m_pScene->AddChild(std::move(CubeEntity));
 
     // ─── Camera Entity ─────────────────────────────────────────────────────
 
@@ -115,6 +104,11 @@ void DemoApp::OnFixedUpdate(float fixedDt)
     m_pCameraEntity->SetPosition(Pos);
 
     m_pScene->Update(fixedDt);
+
+    // Spin the cube so we can see it's 3D
+    Vec3 Rot = m_pCubeEntity->GetRotation();
+    Rot.y += fixedDt * 45.0f;
+    m_pCubeEntity->SetRotation(Rot);
 }
 
 void DemoApp::OnRender(double deltaTime, double totalTime)
@@ -151,8 +145,8 @@ void DemoApp::OnShutdown()
     m_pScene.reset();
     m_pCameraEntity = nullptr;
     m_pCamera = nullptr;
-    m_pQuadEntity = nullptr;
-    m_pQuadRenderer = nullptr;
+    m_pCubeEntity = nullptr;
+    m_pCubeRenderer = nullptr;
 
     auto& assets = AssetManager::Instance();
     assets.UnloadShader(m_ShaderHandle);

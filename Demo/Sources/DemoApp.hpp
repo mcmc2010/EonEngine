@@ -30,13 +30,12 @@ private:
     // Scene entities
     Entity* m_pCameraEntity = nullptr;
     Camera* m_pCamera = nullptr;
-    Entity* m_pQuadEntity = nullptr;
-    MeshRenderer* m_pQuadRenderer = nullptr;
+    Entity* m_pCubeEntity = nullptr;
+    MeshRenderer* m_pCubeRenderer = nullptr;
 
     // Scene
     std::unique_ptr<Scene> m_pScene;
 
-    double m_Angle = 0;
     bool m_CaptureMouse = false;
 };
 
