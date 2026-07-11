@@ -1,10 +1,9 @@
 #include "AMEEMaterial.hpp"
+#include "AMEEBuiltinMaterials.hpp"
 #include "../Shader/AMEEShaderProgram.hpp"
 #include "../Texture/AMEETexture2D.hpp"
-#include "../Texture/AMEEImage.hpp"
 #include "../../Core/Asset/AMEEAssetManager.hpp"
 #include "../../Core/Log/AMEELog.hpp"
-#include "../../Render/AMEERHI.hpp"
 
 namespace AMEE {
 
@@ -55,24 +54,9 @@ void Material::Apply(RHI* rhi)
 
     Shader->use();
 
-    static std::unique_ptr<Texture2D> gs_pFallbackTex;
-    auto EnsureFallback = [&]() {
-        if (!gs_pFallbackTex && rhi) {
-            unsigned char Magenta[4] = { 255, 0, 255, 255 };
-            ImageData Img;
-            Img.Width = Img.Height = 1;
-            Img.Channels = 4;
-            Img.Pixels.assign(Magenta, Magenta + 4);
-            gs_pFallbackTex = std::make_unique<Texture2D>();
-            gs_pFallbackTex->Create(rhi, Img);
-        }
-    };
-
     if (m_Textures.empty()) {
-        EnsureFallback();
-        if (gs_pFallbackTex) {
-            gs_pFallbackTex->Bind(0);
-            Shader->setInt("u_MainTex", 0);
+        if (Material* Def = Assets.GetMaterial(BuiltinMaterials::GetDefault())) {
+            Def->Apply(rhi);
         }
         return;
     }
@@ -82,14 +66,15 @@ void Material::Apply(RHI* rhi)
         Texture2D* Tex = Assets.GetTexture(KV.second);
         if (!Tex) {
             AMEE_LOG_WARN("Material", "[%s] Missing texture: %s", GetName().c_str(), KV.first.c_str());
-            EnsureFallback();
-            Tex = gs_pFallbackTex.get();
+            if (Material* Def = Assets.GetMaterial(BuiltinMaterials::GetDefault())) {
+                Def->Apply(rhi);
+                return;
+            }
+            continue;
         }
-        if (Tex) {
-            Tex->Bind(Slot);
-            Shader->setInt(KV.first, Slot);
-            Slot++;
-        }
+        Tex->Bind(Slot);
+        Shader->setInt(KV.first, Slot);
+        Slot++;
     }
 
     for (auto& KV : m_Floats) {

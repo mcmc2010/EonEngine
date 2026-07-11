@@ -147,6 +147,19 @@ void Mesh::Draw() const
     m_pRHI->bindVertexArray(0);
 }
 
+void Mesh::DrawSubMesh(int Index) const
+{
+    if (!m_pRHI || m_VAO == 0) return;
+    if (Index < 0 || Index >= (int)m_SubMeshes.size()) return;
+
+    const auto& Sub = m_SubMeshes[Index];
+    if (Sub.IndexCount == 0) return;
+
+    m_pRHI->bindVertexArray(m_VAO);
+    m_pRHI->drawElements(m_Primitive, Sub.IndexCount, Sub.IndexStart);
+    m_pRHI->bindVertexArray(0);
+}
+
 void Mesh::Destroy()
 {
     if (m_pRHI) {

@@ -11,7 +11,7 @@ namespace AMEE {
 
 void MeshRenderer::Draw(RHI* rhi, const Mat4& ViewProj)
 {
-    if (!m_Visible || !rhi || !m_Material.IsValid()) return;
+    if (!m_Visible || !rhi) return;
 
     Entity* Owner = GetOwner();
     if (!Owner) return;
@@ -21,16 +21,35 @@ void MeshRenderer::Draw(RHI* rhi, const Mat4& ViewProj)
 
     auto& Assets = AssetManager::Instance();
     Mesh* Mesh = Assets.GetMesh(Filter->GetMesh());
-    Material* Mat = Assets.GetMaterial(m_Material);
+    if (!Mesh) return;
 
-    if (!Mesh || !Mat) return;
+    Mat4 MVPBase = ViewProj * Owner->GetWorldMatrix();
 
-    Mat4 MVP = ViewProj * Owner->GetWorldMatrix();
-
-    Mat->Apply(rhi);
-    Assets.GetShader(Mat->GetShader())->setMat4("uMVP", MVP.Data());
-
-    Mesh->Draw();
+    int SubCount = Mesh->GetSubMeshCount();
+    if (SubCount == 0) {
+        // No submeshes — single material on whole mesh
+        if (!m_Materials.empty()) {
+            Material* Mat = Assets.GetMaterial(m_Materials[0]);
+            if (Mat) {
+                Mat->Apply(rhi);
+                Assets.GetShader(Mat->GetShader())->setMat4("uMVP", MVPBase.Data());
+            }
+        }
+        Mesh->Draw();
+    } else {
+        for (int I = 0; I < SubCount; I++) {
+            if (I < (int)m_Materials.size()) {
+                Material* Mat = Assets.GetMaterial(m_Materials[I]);
+                if (Mat) {
+                    Mat->Apply(rhi);
+                    if (ShaderProgram* S = Assets.GetShader(Mat->GetShader())) {
+                        S->setMat4("uMVP", MVPBase.Data());
+                    }
+                }
+            }
+            Mesh->DrawSubMesh(I);
+        }
+    }
 }
 
 } // namespace AMEE

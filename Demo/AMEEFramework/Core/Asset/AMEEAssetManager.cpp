@@ -43,9 +43,15 @@ TextureHandle AssetManager::LoadTexture(RHI* rhi, const std::string& LogicalPath
         return {};
     }
 
+    return RegisterTexture(std::move(Tex), LogicalPath);
+}
+
+TextureHandle AssetManager::RegisterTexture(std::unique_ptr<Texture2D> InTex, const std::string& Name)
+{
+    if (!InTex) return {};
     uint32_t Idx = static_cast<uint32_t>(m_Textures.size());
-    m_Textures.push_back({std::move(Tex), LogicalPath, 1});
-    AMEE_LOG_INFO("AssetManager", "Loaded texture [%u]: %s", Idx, LogicalPath.c_str());
+    m_Textures.push_back({std::move(InTex), Name, 1});
+    AMEE_LOG_INFO("AssetManager", "Registered texture [%u]: %s", Idx, Name.c_str());
     return {Idx};
 }
 
@@ -149,7 +155,8 @@ MeshHandle AssetManager::RegisterMesh(std::unique_ptr<Mesh> InMesh, const std::s
     return {Idx};
 }
 
-MeshHandle AssetManager::LoadModel(RHI* rhi, const std::string& LogicalPath)
+MeshHandle AssetManager::LoadModel(RHI* rhi, const std::string& LogicalPath,
+                                   std::vector<MaterialHandle>* OutMaterials)
 {
     if (!rhi) return {};
 
@@ -174,7 +181,8 @@ MeshHandle AssetManager::LoadModel(RHI* rhi, const std::string& LogicalPath)
         return {};
     }
 
-    // Load associated materials from .mtl
+    MeshObj->SetSubMeshes(Data.SubMeshes);
+
     std::string MtlName = ObjLoader::ExtractMtlLib(Source);
     if (!MtlName.empty()) {
         std::string ObjDir = LogicalPath.substr(0, LogicalPath.find_last_of('/') + 1);
@@ -183,24 +191,29 @@ MeshHandle AssetManager::LoadModel(RHI* rhi, const std::string& LogicalPath)
 
         if (!MtlSource.empty()) {
             auto Imported = AMEEStandardMaterialImporter::Parse(MtlSource);
-            AMEE_LOG_INFO("AssetManager", "Model '%s' has %zu materials:", LogicalPath.c_str(), Imported.size());
+            AMEE_LOG_INFO("AssetManager", "Model '%s' has %zu materials (%zu submeshes):",
+                          LogicalPath.c_str(), Imported.size(), Data.SubMeshes.size());
 
-            for (auto& Imp : Imported) {
-                if (!Imp.DiffuseTexturePath.empty()) {
-                    std::string TexPath = ObjDir + Imp.DiffuseTexturePath;
-                    TextureHandle Tex = LoadTexture(rhi, TexPath);
-                    if (Tex.IsValid()) {
-                        Imp.Material->SetAlbedoMap(Tex);
-                        AMEE_LOG_INFO("AssetManager", "  [%s] → %s ✓", Imp.Name.c_str(), Imp.DiffuseTexturePath.c_str());
-                    } else {
-                        AMEE_LOG_WARN("AssetManager", "  [%s] → %s ✗ (missing)", Imp.Name.c_str(), Imp.DiffuseTexturePath.c_str());
-                    }
-                } else {
-                    AMEE_LOG_INFO("AssetManager", "  [%s] (no texture)", Imp.Name.c_str());
-                }
+    std::unordered_map<std::string, MaterialHandle> MatMap;
+    for (auto& Imp : Imported) {
+        if (!Imp.DiffuseTexturePath.empty()) {
+            std::string TexPath = ObjDir + Imp.DiffuseTexturePath;
+            TextureHandle Tex = LoadTexture(rhi, TexPath);
+            if (Tex.IsValid()) Imp.Material->SetAlbedoMap(Tex);
+        }
+        MaterialHandle H = RegisterMaterial(std::move(Imp.Material));
+        MatMap[Imp.Name] = H;
+    }
 
-                RegisterMaterial(std::move(Imp.Material));
-            }
+    for (auto& Sub : Data.SubMeshes) {
+        auto It = MatMap.find(Sub.MaterialName);
+        if (It != MatMap.end() && OutMaterials) {
+            OutMaterials->push_back(It->second);
+        }
+        AMEE_LOG_INFO("AssetManager", "  [%s] → %s",
+                      Sub.MaterialName.c_str(),
+                      It != MatMap.end() ? "✓" : "✗ (no match)");
+    }
         } else {
             AMEE_LOG_WARN("AssetManager", "MTL file not found: %s", MtlPath.c_str());
         }

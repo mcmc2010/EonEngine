@@ -24,6 +24,7 @@ public:
 
     // Texture
     TextureHandle LoadTexture(RHI* rhi, const std::string& LogicalPath);
+    TextureHandle RegisterTexture(std::unique_ptr<Texture2D> InTex, const std::string& Name);
     Texture2D* GetTexture(TextureHandle Handle) const;
     void UnloadTexture(TextureHandle Handle);
 
@@ -34,7 +35,8 @@ public:
 
     // Mesh
     MeshHandle RegisterMesh(std::unique_ptr<Mesh> InMesh, const std::string& Name);
-    MeshHandle LoadModel(RHI* rhi, const std::string& LogicalPath);
+    MeshHandle LoadModel(RHI* rhi, const std::string& LogicalPath,
+                         std::vector<MaterialHandle>* OutMaterials = nullptr);
     Mesh* GetMesh(MeshHandle Handle) const;
     void UnloadMesh(MeshHandle Handle);
 

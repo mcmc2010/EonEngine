@@ -25,7 +25,7 @@ protected:
 private:
     ShaderHandle m_ShaderHandle;
     MeshHandle m_MeshHandle;
-    MaterialHandle m_MaterialHandle;
+    std::vector<MaterialHandle> m_MaterialHandles;
 
     // Scene entities
     Entity* m_pCameraEntity = nullptr;

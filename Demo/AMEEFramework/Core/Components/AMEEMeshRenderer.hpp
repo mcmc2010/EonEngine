@@ -4,6 +4,7 @@
 #include "AMEEComponent.hpp"
 #include "../Asset/AMEEAssetHandle.hpp"
 #include "../Math/AMEEMath.hpp"
+#include <vector>
 
 namespace AMEE {
 
@@ -13,9 +14,10 @@ class MeshRenderer : public Component {
 public:
     MeshRenderer() = default;
 
-    MaterialHandle m_Material;
+    std::vector<MaterialHandle> m_Materials;
     bool m_Visible = true;
 
+    void SetMaterial(MaterialHandle H) { m_Materials = {H}; }
     void Draw(RHI* rhi, const Mat4& ViewProj);
 };
 

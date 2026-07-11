@@ -30,8 +30,13 @@ ModelData ObjLoader::Load(const std::string& Source)
     std::vector<Vec3> Normals;
 
     struct FaceVert { int P, T, N; };
-    std::vector<std::vector<FaceVert>> Faces;
+    struct FaceGroup {
+        std::string Material;
+        std::vector<std::vector<FaceVert>> Faces;
+    };
 
+    std::vector<FaceGroup> Groups;
+    std::string CurrentMaterial = "default";
     bool HasTex = false;
     bool HasNorm = false;
 
@@ -59,6 +64,8 @@ ModelData ObjLoader::Load(const std::string& Source)
             LS >> X >> Y >> Z;
             Normals.push_back({X, Y, Z});
             HasNorm = true;
+        } else if (Token == "usemtl") {
+            LS >> CurrentMaterial;
         } else if (Token == "f") {
             std::vector<FaceVert> Face;
             std::string Part;
@@ -76,35 +83,42 @@ ModelData ObjLoader::Load(const std::string& Source)
                 Face.push_back(FV);
             }
 
+            if (Groups.empty() || Groups.back().Material != CurrentMaterial) {
+                Groups.push_back({CurrentMaterial, {}});
+            }
+
+            auto& G = Groups.back();
             if (Face.size() == 3) {
-                Faces.push_back(Face);
+                G.Faces.push_back(Face);
             } else if (Face.size() == 4) {
-                Faces.push_back({Face[0], Face[1], Face[2]});
-                Faces.push_back({Face[0], Face[2], Face[3]});
+                G.Faces.push_back({Face[0], Face[1], Face[2]});
+                G.Faces.push_back({Face[0], Face[2], Face[3]});
             } else if (Face.size() > 4) {
                 for (size_t I = 1; I < Face.size() - 1; I++) {
-                    Faces.push_back({Face[0], Face[I], Face[I + 1]});
+                    G.Faces.push_back({Face[0], Face[I], Face[I + 1]});
                 }
             }
         }
     }
 
-    if (Faces.empty()) {
-        AMEE_LOG_ERROR("ObjLoader", "No faces found in OBJ data");
+    if (Groups.empty()) {
+        AMEE_LOG_ERROR("ObjLoader", "No faces found");
         return Result;
     }
 
     if (!HasNorm) {
         Normals.resize(Positions.size(), {0, 0, 0});
-        for (auto& Face : Faces) {
-            if (Face.size() >= 3) {
-                Vec3 A = Positions[Face[0].P];
-                Vec3 B = Positions[Face[1].P];
-                Vec3 C = Positions[Face[2].P];
-                Vec3 N = Vec3::Cross(B - A, C - A);
-                for (auto& FV : Face) {
-                    if (FV.P >= 0 && FV.P < (int)Normals.size()) {
-                        Normals[FV.P] = Normals[FV.P] + N;
+        for (auto& G : Groups) {
+            for (auto& Face : G.Faces) {
+                if (Face.size() >= 3) {
+                    Vec3 A = Positions[Face[0].P];
+                    Vec3 B = Positions[Face[1].P];
+                    Vec3 C = Positions[Face[2].P];
+                    Vec3 N = Vec3::Cross(B - A, C - A);
+                    for (auto& FV : Face) {
+                        if (FV.P >= 0 && FV.P < (int)Normals.size()) {
+                            Normals[FV.P] = Normals[FV.P] + N;
+                        }
                     }
                 }
             }
@@ -121,42 +135,50 @@ ModelData ObjLoader::Load(const std::string& Source)
     }
 
     std::unordered_map<ObjVertexKey, uint32_t, ObjVertexKeyHash> IndexMap;
-    std::vector<float> Vertices;
-    std::vector<uint32_t> Indices;
+    uint32_t NextIndex = 0;
 
-    for (auto& Face : Faces) {
-        for (auto& FV : Face) {
-            int TI = HasTex && FV.T >= 0 ? FV.T : 0;
-            int NI = HasNorm && FV.N >= 0 ? FV.N : 0;
-            if (FV.P < 0 || FV.P >= (int)Positions.size()) continue;
+    for (auto& G : Groups) {
+        SubMesh Sub;
+        Sub.MaterialName = G.Material;
+        Sub.IndexStart = (uint32_t)Result.Indices.size();
 
-            ObjVertexKey Key = {FV.P, TI, NI};
-            auto It = IndexMap.find(Key);
-            if (It != IndexMap.end()) {
-                Indices.push_back(It->second);
-                continue;
+        for (auto& Face : G.Faces) {
+            for (auto& FV : Face) {
+                int TI = HasTex && FV.T >= 0 ? FV.T : 0;
+                int NI = HasNorm && FV.N >= 0 ? FV.N : 0;
+                if (FV.P < 0 || FV.P >= (int)Positions.size()) continue;
+
+                ObjVertexKey Key = {FV.P, TI, NI};
+                auto It = IndexMap.find(Key);
+                if (It != IndexMap.end()) {
+                    Result.Indices.push_back(It->second);
+                    Sub.IndexCount++;
+                    continue;
+                }
+
+                uint32_t Idx = NextIndex++;
+                IndexMap[Key] = Idx;
+                Result.Indices.push_back(Idx);
+                Sub.IndexCount++;
+
+                Vec3 P = Positions[FV.P];
+                Vec3 N = (NI >= 0 && NI < (int)Normals.size()) ? Normals[NI] : Vec3(0, 1, 0);
+                Vec2 T = (TI >= 0 && TI < (int)TexCoords.size()) ? TexCoords[TI] : Vec2(0, 0);
+
+                Result.Vertices.insert(Result.Vertices.end(), {P.x, P.y, P.z, N.x, N.y, N.z, T.x, T.y});
             }
-
-            uint32_t Idx = (uint32_t)(Vertices.size() / 8);
-            IndexMap[Key] = Idx;
-            Indices.push_back(Idx);
-
-            Vec3 P = Positions[FV.P];
-            Vec3 N = (NI >= 0 && NI < (int)Normals.size()) ? Normals[NI] : Vec3(0, 1, 0);
-            Vec2 T = (TI >= 0 && TI < (int)TexCoords.size()) ? TexCoords[TI] : Vec2(0, 0);
-
-            Vertices.insert(Vertices.end(), {P.x, P.y, P.z, N.x, N.y, N.z, T.x, T.y});
         }
+
+        Result.SubMeshes.push_back(Sub);
+        Result.MaterialNames.push_back(G.Material);
     }
 
-    Result.Vertices = std::move(Vertices);
-    Result.Indices = std::move(Indices);
     Result.Layout.Add(0, 3, RHIDataType::Float)
                  .Add(1, 3, RHIDataType::Float)
                  .Add(2, 2, RHIDataType::Float);
 
-    AMEE_LOG_INFO("ObjLoader", "Loaded %zu vertices, %zu indices, %zu faces",
-                  Result.Vertices.size() / 8, Result.Indices.size(), Faces.size());
+    AMEE_LOG_INFO("ObjLoader", "Loaded %zu vertices, %zu indices, %zu submeshes",
+                  Result.Vertices.size() / 8, Result.Indices.size(), Result.SubMeshes.size());
     return Result;
 }
 
@@ -175,6 +197,28 @@ std::string ObjLoader::ExtractMtlLib(const std::string& Source)
         }
     }
     return {};
+}
+
+std::vector<std::string> ObjLoader::ExtractMaterialNames(const std::string& Source)
+{
+    std::vector<std::string> Names;
+    std::istringstream Stream(Source);
+    std::string Line;
+    std::string Last;
+    while (std::getline(Stream, Line)) {
+        std::istringstream LS(Line);
+        std::string Token;
+        LS >> Token;
+        if (Token == "usemtl") {
+            std::string Name;
+            LS >> Name;
+            if (Name != Last) {
+                Names.push_back(Name);
+                Last = Name;
+            }
+        }
+    }
+    return Names;
 }
 
 } // namespace AMEE

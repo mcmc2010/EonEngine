@@ -28,18 +28,10 @@ bool DemoApp::OnInit()
 
     // ─── Model Entity (loaded from OBJ + MTL) ──────────────────────────────
 
-    m_MeshHandle = assets.LoadModel(rhi, "Assets/Models/female01.obj");
+    m_MeshHandle = assets.LoadModel(rhi, "Assets/Models/female01.obj", &m_MaterialHandles);
     if (!m_MeshHandle.IsValid()) {
         AMEE_LOG_ERROR("DemoApp", "Failed to load model");
         return false;
-    }
-
-    // Use first material from MTL (has female_01.JPG)
-    m_MaterialHandle = {1};  // First material registered after mesh [0]
-    if (Material* Mat = assets.GetMaterial(m_MaterialHandle)) {
-        Mat->SetShader(m_ShaderHandle);
-        AMEE_LOG_INFO("DemoApp", "Using material: %s", Mat->GetName().c_str());
-        Mat->PrintDebug();
     }
 
     auto CubeEntity = std::make_unique<Entity>();
@@ -51,7 +43,14 @@ bool DemoApp::OnInit()
     Filter->SetMesh(m_MeshHandle);
 
     m_pCubeRenderer = CubeEntity->AddComponent<MeshRenderer>();
-    m_pCubeRenderer->m_Material = m_MaterialHandle;
+    m_pCubeRenderer->m_Materials = m_MaterialHandles;
+
+    // Set shader on all materials
+    for (auto& H : m_MaterialHandles) {
+        if (Material* M = assets.GetMaterial(H)) {
+            M->SetShader(m_ShaderHandle);
+        }
+    }
     m_pCubeEntity = CubeEntity.get();
 
     m_pScene->AddChild(std::move(CubeEntity));
@@ -147,7 +146,7 @@ void DemoApp::OnShutdown()
     auto& assets = AssetManager::Instance();
     assets.UnloadShader(m_ShaderHandle);
     assets.UnloadMesh(m_MeshHandle);
-    assets.UnloadMaterial(m_MaterialHandle);
+    for (auto& H : m_MaterialHandles) assets.UnloadMaterial(H);
 
     AMEE_LOG_INFO("DemoApp", "Demo shutdown");
 }

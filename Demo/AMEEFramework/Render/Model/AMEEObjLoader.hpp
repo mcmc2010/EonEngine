@@ -3,6 +3,7 @@
 #pragma once
 #include "AMEEModelData.hpp"
 #include <string>
+#include <vector>
 
 namespace AMEE {
 
@@ -10,6 +11,7 @@ class ObjLoader {
 public:
     static ModelData Load(const std::string& Source);
     static std::string ExtractMtlLib(const std::string& Source);
+    static std::vector<std::string> ExtractMaterialNames(const std::string& Source);
 };
 
 } // namespace AMEE
