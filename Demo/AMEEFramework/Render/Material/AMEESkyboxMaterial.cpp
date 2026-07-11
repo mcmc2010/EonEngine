@@ -1,7 +1,9 @@
 #include "AMEESkyboxMaterial.hpp"
 #include "../Texture/AMEEImage.hpp"
 #include "../Shader/AMEEShaderProgram.hpp"
+#include "../Texture/AMEETexture2D.hpp"
 #include "../../Core/Asset/AMEEAssetManager.hpp"
+#include "../../Core/Asset/AMEEFileSystem.hpp"
 #include "../../Core/Log/AMEELog.hpp"
 #include "../../Render/AMEERHI.hpp"
 
@@ -47,7 +49,8 @@ bool SkyboxMaterial::LoadFaces(RHI* rhi,
 
     // Load all 6 faces
     for (int I = 0; I < 6; I++) {
-        ImageData Img = LoadImage(Paths[I]);
+        std::string ResolvedPath = FileSystem::Instance().ResolvePath(Paths[I]);
+        ImageData Img = LoadImage(ResolvedPath.empty() ? Paths[I] : ResolvedPath);
         if (Img.Pixels.empty()) {
             AMEE_LOG_ERROR("SkyboxMaterial", "Failed to load: %s", Paths[I].c_str());
             return false;
@@ -67,9 +70,18 @@ bool SkyboxMaterial::LoadFaces(RHI* rhi,
     // Create shader
     auto& Assets = AssetManager::Instance();
     auto Shader = rhi->CreateShaderProgram();
-    Shader->compileFromSource(ShaderType::Vertex, g_VsCubemap);
-    Shader->compileFromSource(ShaderType::Fragment, g_FsCubemap);
-    Shader->link();
+    Shader->compileFromSource(ShaderType::Vertex, g_VsCubemap, [](const ShaderCompileError& E) {
+        AMEE_LOG_ERROR("Skybox", "VS error: %s", E.message.c_str());
+    });
+    Shader->compileFromSource(ShaderType::Fragment, g_FsCubemap, [](const ShaderCompileError& E) {
+        AMEE_LOG_ERROR("Skybox", "FS error: %s", E.message.c_str());
+    });
+    if (!Shader->link([](const std::string& E) {
+        AMEE_LOG_ERROR("Skybox", "Link error: %s", E.c_str());
+    })) {
+        AMEE_LOG_ERROR("SkyboxMaterial", "Shader link failed");
+        return false;
+    }
     SetShader(Assets.RegisterShader(std::move(Shader), "_SkyboxShader"));
 
     AMEE_LOG_INFO("SkyboxMaterial", "Cubemap loaded (%dx%d)", FaceW, FaceH);

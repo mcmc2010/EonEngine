@@ -1,7 +1,14 @@
 #include "AMEEScene.hpp"
 #include "Entity/AMEEEntity.hpp"
 #include "Components/AMEELight.hpp"
+#include "Components/AMEEMeshFilter.hpp"
 #include "../Render/Shader/AMEEShaderProgram.hpp"
+#include "../Render/AMEEMesh.hpp"
+#include "../Render/AMEERHI.hpp"
+#include "../Render/Material/AMEEMaterial.hpp"
+#include "../Render/Material/AMEESkyboxMaterial.hpp"
+#include "../Core/Meshes/AMEEPrimitiveMesh.hpp"
+#include "../Core/Asset/AMEEAssetManager.hpp"
 #include "Log/AMEELog.hpp"
 
 namespace AMEE {
@@ -20,12 +27,57 @@ static void CollectLightsRecursive(const std::vector<std::unique_ptr<Node>>& Chi
     }
 }
 
+bool Scene::LoadSkybox(RHI* rhi, const std::string& Dir)
+{
+    std::string Base = Dir;
+    if (!Base.empty() && Base.back() != '/') Base += '/';
+
+    auto Mat = std::make_unique<SkyboxMaterial>();
+    if (!Mat->LoadFaces(rhi,
+            Base + "px.png", Base + "nx.png",
+            Base + "py.png", Base + "ny.png",
+            Base + "pz.png", Base + "nz.png"))
+    {
+        AMEE_LOG_ERROR("Scene", "Failed to load cubemap from %s", Dir.c_str());
+        return false;
+    }
+
+    auto& Assets = AssetManager::Instance();
+    m_Skybox = Assets.RegisterMaterial(std::move(Mat));
+
+    auto SkyMesh = std::unique_ptr<Mesh>(PrimitiveMesh::CreateCube(rhi, 2.0f));
+    m_SkyboxMesh = Assets.RegisterMesh(std::move(SkyMesh), "_SkyboxCube");
+
+    AMEE_LOG_INFO("Scene", "Skybox loaded from %s", Dir.c_str());
+    return true;
+}
+
+void Scene::DrawSkybox(RHI* rhi, const Mat4& View, const Mat4& Proj)
+{
+    if (!m_Skybox.IsValid() || !m_SkyboxMesh.IsValid()) return;
+
+    auto& Assets = AssetManager::Instance();
+    Material* Mat = Assets.GetMaterial(m_Skybox);
+    Mesh* SkyMesh = Assets.GetMesh(m_SkyboxMesh);
+    if (!Mat || !SkyMesh) return;
+
+    rhi->setDepthMask(false);
+
+    Mat4 SkyVP = Proj * View;
+    SkyVP.at(3, 0) = SkyVP.at(3, 1) = SkyVP.at(3, 2) = 0;
+
+    Mat->Apply(rhi);
+    Assets.GetShader(Mat->GetShader())->setMat4("uVP", SkyVP.Data());
+    SkyMesh->Draw();
+
+    rhi->setDepthMask(true);
+}
+
 void Scene::CollectLights()
 {
     m_Lights.clear();
     CollectLightsRecursive(GetChildren(), m_Lights);
 
-    // Pick first Directional light for sun data
     m_SunData = {};
     for (auto* L : m_Lights) {
         if (L->m_Type == Light::Type::Directional) {
@@ -59,7 +111,6 @@ void Scene::ApplyLighting(ShaderProgram* Shader) const
 
 void Scene::Update(float DeltaTime)
 {
-    // Collect lights before updating entities
     CollectLights();
 
     for (auto& Child : GetChildren()) {

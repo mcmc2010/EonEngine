@@ -35,9 +35,6 @@ private:
     Camera* m_pCamera = nullptr;
     Entity* m_pCubeEntity = nullptr;
     MeshRenderer* m_pCubeRenderer = nullptr;
-
-    // Skybox
-    Entity* m_pSkyboxEntity = nullptr;
     GridHelper* m_pGridHelper = nullptr;
 
     // Scene

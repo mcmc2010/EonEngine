@@ -43,6 +43,7 @@ public:
     virtual void setClearColor(float r, float g, float b, float a) = 0;
     virtual void clear() = 0;
     virtual void setViewport(const RHIViewport& vp) = 0;
+    virtual void setDepthMask(bool Write) = 0;
     virtual void present() = 0;
 
     // VBO

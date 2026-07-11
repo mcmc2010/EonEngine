@@ -29,6 +29,11 @@ void RHIOpenGL::setViewport(const RHIViewport& vp)
     );
 }
 
+void RHIOpenGL::setDepthMask(bool Write)
+{
+    glDepthMask(Write ? GL_TRUE : GL_FALSE);
+}
+
 void RHIOpenGL::present()
 {
     NSOpenGLContext* ctx = NSOpenGLContext.currentContext;

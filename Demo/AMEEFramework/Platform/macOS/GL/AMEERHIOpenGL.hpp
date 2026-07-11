@@ -17,6 +17,7 @@ public:
     void setClearColor(float r, float g, float b, float a) override;
     void clear() override;
     void setViewport(const RHIViewport& vp) override;
+    void setDepthMask(bool Write) override;
     void present() override;
 
     // VBO
