@@ -7,6 +7,9 @@
 #include "AMEEFramework/Render/Shader/AMEEShaderProgram.hpp"
 #include "AMEEFramework/Render/Texture/AMEETexture2D.hpp"
 #include "AMEEFramework/Render/Material/AMEEStandardMaterial.hpp"
+#include "AMEEFramework/Core/Meshes/AMEEPrimitiveMesh.hpp"
+#define GL_SILENCE_DEPRECATION
+#include <OpenGL/gl3.h>
 #include <functional>
 
 namespace AMEE {
@@ -28,7 +31,28 @@ bool DemoApp::OnInit()
     m_pScene->SetName("DemoScene");
     m_pScene->SetAmbientColor({0.3f, 0.3f, 0.35f, 1.0f});
 
-    // ─── Skybox (procedural — cubemap textures todo) ───────────────────────
+    // ─── Skybox ────────────────────────────────────────────────────────────
+
+    auto SkyboxMat = std::make_unique<SkyboxMaterial>();
+    if (SkyboxMat->LoadFaces(rhi,
+        "Assets/Skybox/px.png", "Assets/Skybox/nx.png",
+        "Assets/Skybox/py.png", "Assets/Skybox/ny.png",
+        "Assets/Skybox/pz.png", "Assets/Skybox/nz.png"))
+    {
+        MaterialHandle SkyboxHandle = assets.RegisterMaterial(std::move(SkyboxMat));
+        m_pScene->SetSkybox(SkyboxHandle);
+
+        auto SkyEnt = std::make_unique<Entity>();
+        SkyEnt->SetName("Skybox");
+        auto SBFilter = SkyEnt->AddComponent<MeshFilter>();
+
+        auto SkyMesh = std::unique_ptr<Mesh>(PrimitiveMesh::CreateCube(rhi, 2.0f));
+        SBFilter->SetMesh(assets.RegisterMesh(std::move(SkyMesh), "_SkyboxCube"));
+        m_pSkyboxEntity = SkyEnt.get();
+        m_pScene->AddChild(std::move(SkyEnt));
+
+        AMEE_LOG_INFO("DemoApp", "Skybox loaded from Assets/Skybox/");
+    }
 
     // ─── Model Entity (loaded from OBJ + MTL) ──────────────────────────────
 
@@ -153,6 +177,26 @@ void DemoApp::OnRender(double deltaTime, double totalTime, double alpha)
     auto& Assets = AssetManager::Instance();
     m_pShader = Assets.GetShader(m_ShaderHandle);
     m_pScene->ApplyLighting(m_pShader);
+
+    // Skybox (depth write off, view matrix with no translation)
+    MaterialHandle SkyH = m_pScene->GetSkybox();
+    if (SkyH.IsValid() && m_pSkyboxEntity) {
+        glDepthMask(GL_FALSE);
+        Mat4 SkyView = View;
+        SkyView.at(3, 0) = SkyView.at(3, 1) = SkyView.at(3, 2) = 0;
+        Mat4 SkyVP = Proj * SkyView;
+
+        if (MeshFilter* SBF = m_pSkyboxEntity->GetComponent<MeshFilter>()) {
+            if (Mesh* SMesh = Assets.GetMesh(SBF->GetMesh())) {
+                if (Material* SMat = Assets.GetMaterial(SkyH)) {
+                    SMat->Apply(rhi);
+                    Assets.GetShader(SMat->GetShader())->setMat4("uVP", SkyVP.Data());
+                }
+                SMesh->Draw();
+            }
+        }
+        glDepthMask(GL_TRUE);
+    }
 
     // Grid
     if (m_pGridHelper && m_pShader) {

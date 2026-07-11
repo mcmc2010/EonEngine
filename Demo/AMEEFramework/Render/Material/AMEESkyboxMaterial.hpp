@@ -16,6 +16,7 @@ public:
                    const std::string& Front,  const std::string& Back);
 
     void Apply(RHI* rhi) override;
+    void Destroy();
 
 private:
     uint32_t m_CubemapID = 0;

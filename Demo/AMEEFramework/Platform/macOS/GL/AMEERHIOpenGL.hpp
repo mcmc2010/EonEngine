@@ -45,6 +45,12 @@ public:
     void setTextureFilter(uint32_t id, RHIFilter minFilter, RHIFilter magFilter) override;
     void setTextureWrap(uint32_t id, RHIWrap wrapS, RHIWrap wrapT) override;
 
+    // Cubemap Texture
+    uint32_t createCubemap(const unsigned char* faces[6], int width, int height,
+                            RHIFormat format, RHIFormat internalFormat) override;
+    void destroyCubemap(uint32_t id) override;
+    void bindCubemap(uint32_t id, uint32_t slot) override;
+
     // Shader
     std::unique_ptr<ShaderProgram> CreateShaderProgram() override;
 

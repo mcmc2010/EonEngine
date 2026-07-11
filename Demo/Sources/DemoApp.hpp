@@ -11,6 +11,7 @@
 #include "AMEEFramework/Core/Components/AMEEMeshRenderer.hpp"
 #include "AMEEFramework/Core/Components/AMEELight.hpp"
 #include "AMEEFramework/Core/Components/AMEEGridHelper.hpp"
+#include "AMEEFramework/Render/Material/AMEESkyboxMaterial.hpp"
 #include "AMEEFramework/Core/Math/AMEEMath.hpp"
 #include "AMEEFramework/Core/Log/AMEELog.hpp"
 #include <memory>

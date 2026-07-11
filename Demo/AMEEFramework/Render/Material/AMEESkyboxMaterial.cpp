@@ -1,13 +1,9 @@
 #include "AMEESkyboxMaterial.hpp"
 #include "../Texture/AMEEImage.hpp"
 #include "../Shader/AMEEShaderProgram.hpp"
-#include "../Texture/AMEETexture2D.hpp"
 #include "../../Core/Asset/AMEEAssetManager.hpp"
 #include "../../Core/Log/AMEELog.hpp"
 #include "../../Render/AMEERHI.hpp"
-#define GL_SILENCE_DEPRECATION
-#include <OpenGL/gl3.h>
-#include "../../Platform/macOS/GL/AMEEGLCheck.hpp"
 
 namespace AMEE {
 
@@ -46,37 +42,27 @@ bool SkyboxMaterial::LoadFaces(RHI* rhi,
     m_pRHI = rhi;
 
     const std::string Paths[6] = { Right, Left, Top, Bottom, Front, Back };
-    GLenum Targets[6] = {
-        GL_TEXTURE_CUBE_MAP_POSITIVE_X,
-        GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
-        GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
-        GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
-        GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
-        GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,
-    };
-
-    GL_CHECK(glGenTextures(1, &m_CubemapID));
-    GL_CHECK(glBindTexture(GL_TEXTURE_CUBE_MAP, m_CubemapID));
-
+    const unsigned char* FaceData[6] = {};
     int FaceW = 0, FaceH = 0;
+
+    // Load all 6 faces
     for (int I = 0; I < 6; I++) {
         ImageData Img = LoadImage(Paths[I]);
         if (Img.Pixels.empty()) {
             AMEE_LOG_ERROR("SkyboxMaterial", "Failed to load: %s", Paths[I].c_str());
-            GL_CHECK(glDeleteTextures(1, &m_CubemapID));
-            m_CubemapID = 0;
             return false;
         }
-        FaceW = Img.Width; FaceH = Img.Height;
-        GL_CHECK(glTexImage2D(Targets[I], 0, GL_RGBA8, Img.Width, Img.Height, 0,
-                               GL_RGBA, GL_UNSIGNED_BYTE, Img.Pixels.data()));
+        FaceW = Img.Width;
+        FaceH = Img.Height;
+        FaceData[I] = Img.Pixels.data();
     }
 
-    GL_CHECK(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
-    GL_CHECK(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-    GL_CHECK(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
-    GL_CHECK(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
-    GL_CHECK(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE));
+    // Create cubemap via RHI
+    m_CubemapID = rhi->createCubemap(FaceData, FaceW, FaceH, RHIFormat::RGBA8, RHIFormat::RGBA8);
+    if (m_CubemapID == 0) {
+        AMEE_LOG_ERROR("SkyboxMaterial", "Failed to create cubemap");
+        return false;
+    }
 
     // Create shader
     auto& Assets = AssetManager::Instance();
@@ -97,10 +83,16 @@ void SkyboxMaterial::Apply(RHI* rhi)
     if (!Shader || !m_CubemapID) return;
 
     Shader->use();
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, m_CubemapID);
+    rhi->bindCubemap(m_CubemapID, 0);
     Shader->setInt("u_Cubemap", 0);
+}
+
+void SkyboxMaterial::Destroy()
+{
+    if (m_pRHI && m_CubemapID) {
+        m_pRHI->destroyCubemap(m_CubemapID);
+        m_CubemapID = 0;
+    }
 }
 
 } // namespace AMEE

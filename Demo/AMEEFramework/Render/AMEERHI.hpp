@@ -71,6 +71,12 @@ public:
     virtual void setTextureFilter(uint32_t id, RHIFilter minFilter, RHIFilter magFilter) = 0;
     virtual void setTextureWrap(uint32_t id, RHIWrap wrapS, RHIWrap wrapT) = 0;
 
+    // Cubemap Texture
+    virtual uint32_t createCubemap(const unsigned char* faces[6], int width, int height,
+                                    RHIFormat format, RHIFormat internalFormat) = 0;
+    virtual void destroyCubemap(uint32_t id) = 0;
+    virtual void bindCubemap(uint32_t id, uint32_t slot) = 0;
+
     // Shader
     virtual std::unique_ptr<ShaderProgram> CreateShaderProgram() = 0;
 

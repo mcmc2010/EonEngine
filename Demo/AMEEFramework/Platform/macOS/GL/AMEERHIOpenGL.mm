@@ -196,10 +196,57 @@ void RHIOpenGL::setTextureFilter(uint32_t id, RHIFilter minFilter, RHIFilter mag
 
 void RHIOpenGL::setTextureWrap(uint32_t id, RHIWrap wrapS, RHIWrap wrapT)
 {
-    glBindTexture(GL_TEXTURE_2D, id);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapToGL(wrapS));
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapToGL(wrapT));
-    glBindTexture(GL_TEXTURE_2D, 0);
+    GL_CHECK(glBindTexture(GL_TEXTURE_2D, id));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapToGL(wrapS)));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapToGL(wrapT)));
+    GL_CHECK(glBindTexture(GL_TEXTURE_2D, 0));
+}
+
+// Cubemap Texture
+uint32_t RHIOpenGL::createCubemap(const unsigned char* faces[6], int width, int height,
+                                   RHIFormat format, RHIFormat internalFormat)
+{
+    GLuint tex = 0;
+    GL_CHECK(glGenTextures(1, &tex));
+    GL_CHECK(glBindTexture(GL_TEXTURE_CUBE_MAP, tex));
+
+    GLenum glFormat = formatToGL(format);
+    GLenum glInternal = internalFormatToGL(internalFormat);
+
+    GLenum targets[6] = {
+        GL_TEXTURE_CUBE_MAP_POSITIVE_X,
+        GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
+        GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
+        GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
+        GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
+        GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,
+    };
+
+    for (int i = 0; i < 6; i++) {
+        GL_CHECK(glTexImage2D(targets[i], 0, glInternal, width, height, 0,
+                               glFormat, GL_UNSIGNED_BYTE, faces[i]));
+    }
+
+    GL_CHECK(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE));
+
+    GL_CHECK(glBindTexture(GL_TEXTURE_CUBE_MAP, 0));
+    return tex;
+}
+
+void RHIOpenGL::destroyCubemap(uint32_t id)
+{
+    GLuint tex = id;
+    GL_CHECK(glDeleteTextures(1, &tex));
+}
+
+void RHIOpenGL::bindCubemap(uint32_t id, uint32_t slot)
+{
+    GL_CHECK(glActiveTexture(GL_TEXTURE0 + slot));
+    GL_CHECK(glBindTexture(GL_TEXTURE_CUBE_MAP, id));
 }
 
 // Shader
