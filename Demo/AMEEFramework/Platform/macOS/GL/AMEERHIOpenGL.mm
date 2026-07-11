@@ -4,6 +4,7 @@
 #include <OpenGL/gl3.h>
 #include <OpenGL/OpenGL.h>
 #import <AppKit/AppKit.h>
+#include "AMEEGLCheck.hpp"
 
 namespace AMEE {
 
@@ -15,7 +16,7 @@ void RHIOpenGL::setClearColor(float r, float g, float b, float a)
 
 void RHIOpenGL::clear()
 {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 }
 
 void RHIOpenGL::setViewport(const RHIViewport& vp)
@@ -40,10 +41,10 @@ void RHIOpenGL::present()
 uint32_t RHIOpenGL::createVertexBuffer(const float* data, uint32_t size)
 {
     GLuint vbo = 0;
-    glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    GL_CHECK(glGenBuffers(1, &vbo));
+    GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, vbo));
+    GL_CHECK(glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW));
+    GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, 0));
     return vbo;
 }
 
@@ -62,10 +63,10 @@ void RHIOpenGL::bindVertexBuffer(uint32_t id)
 uint32_t RHIOpenGL::createIndexBuffer(const uint32_t* data, uint32_t size)
 {
     GLuint ebo = 0;
-    glGenBuffers(1, &ebo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    GL_CHECK(glGenBuffers(1, &ebo));
+    GL_CHECK(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo));
+    GL_CHECK(glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, data, GL_STATIC_DRAW));
+    GL_CHECK(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
     return ebo;
 }
 
@@ -84,7 +85,7 @@ void RHIOpenGL::bindIndexBuffer(uint32_t id)
 uint32_t RHIOpenGL::createVertexArray()
 {
     GLuint vao = 0;
-    glGenVertexArrays(1, &vao);
+    GL_CHECK(glGenVertexArrays(1, &vao));
     return vao;
 }
 
@@ -133,7 +134,7 @@ void RHIOpenGL::drawArrays(RHIPrimitive primitive, uint32_t count, uint32_t offs
         case RHIPrimitive::LineStrip:      glPrimitive = GL_LINE_STRIP; break;
         case RHIPrimitive::Points:         glPrimitive = GL_POINTS; break;
     }
-    glDrawArrays(glPrimitive, offset, count);
+    GL_CHECK(glDrawArrays(glPrimitive, offset, count));
 }
 
 void RHIOpenGL::drawElements(RHIPrimitive primitive, uint32_t count, uint32_t offset)
@@ -146,7 +147,7 @@ void RHIOpenGL::drawElements(RHIPrimitive primitive, uint32_t count, uint32_t of
         case RHIPrimitive::LineStrip:      glPrimitive = GL_LINE_STRIP; break;
         case RHIPrimitive::Points:         glPrimitive = GL_POINTS; break;
     }
-    glDrawElements(glPrimitive, count, GL_UNSIGNED_INT, (const void*)(uintptr_t)(offset * sizeof(uint32_t)));
+    GL_CHECK(glDrawElements(glPrimitive, count, GL_UNSIGNED_INT, (const void*)(uintptr_t)(offset * sizeof(uint32_t))));
 }
 
 // Texture
@@ -154,8 +155,8 @@ uint32_t RHIOpenGL::createTexture(const unsigned char* data, int width, int heig
                                    RHIFormat format, RHIFormat internalFormat)
 {
     GLuint tex = 0;
-    glGenTextures(1, &tex);
-    glBindTexture(GL_TEXTURE_2D, tex);
+    GL_CHECK(glGenTextures(1, &tex));
+    GL_CHECK(glBindTexture(GL_TEXTURE_2D, tex));
 
     GLenum glFormat = formatToGL(format);
     GLenum glInternal = internalFormatToGL(internalFormat);

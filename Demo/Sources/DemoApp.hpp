@@ -9,6 +9,8 @@
 #include "AMEEFramework/Core/Entity/AMEEEntity.hpp"
 #include "AMEEFramework/Core/Components/AMEEMeshFilter.hpp"
 #include "AMEEFramework/Core/Components/AMEEMeshRenderer.hpp"
+#include "AMEEFramework/Core/Components/AMEELight.hpp"
+#include "AMEEFramework/Core/Components/AMEEGridHelper.hpp"
 #include "AMEEFramework/Core/Math/AMEEMath.hpp"
 #include "AMEEFramework/Core/Log/AMEELog.hpp"
 #include <memory>
@@ -19,7 +21,7 @@ class DemoApp : public MacosApplication {
 protected:
     bool OnInit() override;
     void OnFixedUpdate(float fixedDt) override;
-    void OnRender(double deltaTime, double totalTime) override;
+    void OnRender(double deltaTime, double totalTime, double alpha) override;
     void OnShutdown() override;
 
 private:
@@ -33,8 +35,13 @@ private:
     Entity* m_pCubeEntity = nullptr;
     MeshRenderer* m_pCubeRenderer = nullptr;
 
+    // Skybox
+    Entity* m_pSkyboxEntity = nullptr;
+    GridHelper* m_pGridHelper = nullptr;
+
     // Scene
     std::unique_ptr<Scene> m_pScene;
+    ShaderProgram* m_pShader = nullptr;
 
     bool m_CaptureMouse = false;
 };

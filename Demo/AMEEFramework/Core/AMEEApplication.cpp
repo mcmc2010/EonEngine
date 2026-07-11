@@ -96,7 +96,7 @@ void Application::Run()
 {
     m_pGameLoop->start(
         // Render callback
-        [this](double dt, double totalTime) {
+        [this](double dt, double totalTime, double alpha) {
             m_pInput->Update();
 
             m_pGLContext->makeCurrent();
@@ -105,7 +105,7 @@ void Application::Run()
             m_pGLContext->getSize(w, h);
             m_pRHI->setViewport({0.0f, 0.0f, (float)w, (float)h});
 
-            OnRender(dt, totalTime);
+            OnRender(dt, totalTime, alpha);
 
             m_pGLContext->swapBuffers();
 

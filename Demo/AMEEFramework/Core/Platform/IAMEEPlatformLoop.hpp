@@ -8,7 +8,7 @@ namespace AMEE {
 
 class IPlatformLoop {
 public:
-    using RenderCallback = std::function<void(double dt, double totalTime)>;
+    using RenderCallback = std::function<void(double dt, double totalTime, double alpha)>;
     using FixedCallback  = std::function<void(double fixedDt)>;
 
     virtual ~IPlatformLoop() = default;

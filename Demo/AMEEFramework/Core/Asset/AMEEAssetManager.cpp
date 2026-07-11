@@ -119,9 +119,15 @@ ShaderHandle AssetManager::LoadShader(RHI* rhi, const std::string& VsPath, const
         return {};
     }
 
+    return RegisterShader(std::move(Shader), VsPath + " + " + FsPath);
+}
+
+ShaderHandle AssetManager::RegisterShader(std::unique_ptr<ShaderProgram> InShader, const std::string& Name)
+{
+    if (!InShader) return {};
     uint32_t Idx = static_cast<uint32_t>(m_Shaders.size());
-    m_Shaders.push_back({std::move(Shader), VsPath, FsPath, 1});
-    AMEE_LOG_INFO("AssetManager", "Loaded shader [%u]: %s + %s", Idx, VsPath.c_str(), FsPath.c_str());
+    m_Shaders.push_back({std::move(InShader), Name, "", 1});
+    AMEE_LOG_INFO("AssetManager", "Registered shader [%u]: %s", Idx, Name.c_str());
     return {Idx};
 }
 

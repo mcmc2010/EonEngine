@@ -30,6 +30,7 @@ public:
 
     // Shader
     ShaderHandle LoadShader(RHI* rhi, const std::string& VsPath, const std::string& FsPath);
+    ShaderHandle RegisterShader(std::unique_ptr<ShaderProgram> InShader, const std::string& Name);
     ShaderProgram* GetShader(ShaderHandle Handle) const;
     void UnloadShader(ShaderHandle Handle);
 

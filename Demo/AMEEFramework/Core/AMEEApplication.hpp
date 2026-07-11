@@ -41,7 +41,7 @@ protected:
     // Override in subclass for custom init/render/shutdown
     virtual bool OnInit() { return true; }
     virtual void OnFixedUpdate(float fixedDt) {}
-    virtual void OnRender(double deltaTime, double totalTime) = 0;
+    virtual void OnRender(double deltaTime, double totalTime, double alpha) = 0;
     virtual void OnShutdown() {}
     virtual void OnWindowShouldClose() {}
 

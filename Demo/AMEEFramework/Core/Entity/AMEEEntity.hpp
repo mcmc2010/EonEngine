@@ -33,6 +33,11 @@ public:
     Mat4 GetLocalMatrix() const;
     Mat4 GetWorldMatrix() const;
 
+    // Direction vectors from rotation
+    Vec3 GetForward() const;
+    Vec3 GetRight() const;
+    Vec3 GetUp() const;
+
     // Components
     template<typename T, typename... Args>
     T* AddComponent(Args&&... args);

@@ -135,7 +135,8 @@ void MacosGameLoop::handleDisplayLinkOutput(const CVTimeStamp* outputTime)
     }
 
     if (m_RenderCallback) {
-        m_RenderCallback(rawDelta, m_Time);
+        double Alpha = (m_FixedDeltaTime > 0) ? (m_AccumulatedFixedTime / m_FixedDeltaTime) : 0.0;
+        m_RenderCallback(rawDelta, m_Time, Alpha);
     }
 
     // Heartbeat: log every 60 frames so we can see when it stops

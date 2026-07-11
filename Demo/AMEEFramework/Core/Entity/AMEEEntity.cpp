@@ -37,4 +37,30 @@ void Entity::Update(float DeltaTime)
     }
 }
 
+Vec3 Entity::GetForward() const
+{
+    float YawRad = m_vRotation.y * DEG2RAD;
+    float PitchRad = m_vRotation.x * DEG2RAD;
+    return {
+        std::cos(PitchRad) * std::cos(YawRad),
+        std::sin(PitchRad),
+        std::cos(PitchRad) * std::sin(YawRad)
+    };
+}
+
+Vec3 Entity::GetRight() const
+{
+    float YawRad = m_vRotation.y * DEG2RAD;
+    return {
+        -std::sin(YawRad),
+        0,
+        std::cos(YawRad)
+    };
+}
+
+Vec3 Entity::GetUp() const
+{
+    return Vec3::Cross(GetRight(), GetForward());
+}
+
 } // namespace AMEE

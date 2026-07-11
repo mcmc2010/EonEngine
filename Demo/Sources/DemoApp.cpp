@@ -26,6 +26,9 @@ bool DemoApp::OnInit()
     // Create scene
     m_pScene = std::make_unique<Scene>();
     m_pScene->SetName("DemoScene");
+    m_pScene->SetAmbientColor({0.3f, 0.3f, 0.35f, 1.0f});
+
+    // ─── Skybox (procedural — cubemap textures todo) ───────────────────────
 
     // ─── Model Entity (loaded from OBJ + MTL) ──────────────────────────────
 
@@ -55,6 +58,25 @@ bool DemoApp::OnInit()
     m_pCubeEntity = CubeEntity.get();
 
     m_pScene->AddChild(std::move(CubeEntity));
+
+    // ─── Sun Light ─────────────────────────────────────────────────────────
+
+    auto SunEntity = std::make_unique<Entity>();
+    SunEntity->SetName("Sun");
+    SunEntity->SetRotation({50, 30, 0});
+
+    auto* LightComp = SunEntity->AddComponent<Light>();
+    LightComp->m_Color = {1.0f, 0.95f, 0.85f, 1.2f};
+
+    m_pScene->AddChild(std::move(SunEntity));
+
+    // ─── Grid ──────────────────────────────────────────────────────────────
+
+    auto GridEnt = std::make_unique<Entity>();
+    GridEnt->SetName("Grid");
+    m_pGridHelper = GridEnt->AddComponent<GridHelper>();
+    m_pGridHelper->Create(rhi, 10.0f, 10);
+    m_pScene->AddChild(std::move(GridEnt));
 
     // ─── Camera Entity ─────────────────────────────────────────────────────
 
@@ -111,11 +133,13 @@ void DemoApp::OnFixedUpdate(float fixedDt)
     m_pCubeEntity->SetRotation(Rot);
 }
 
-void DemoApp::OnRender(double deltaTime, double totalTime)
+void DemoApp::OnRender(double deltaTime, double totalTime, double alpha)
 {
     RHI* rhi = GetRHI();
 
-    rhi->setClearColor(0.15f, 0.15f, 0.2f, 1.0f);
+    rhi->setClearColor(m_pScene->GetAmbientColor().x,
+                       m_pScene->GetAmbientColor().y,
+                       m_pScene->GetAmbientColor().z, 1.0f);
     rhi->clear();
 
     int w, h;
@@ -125,6 +149,18 @@ void DemoApp::OnRender(double deltaTime, double totalTime)
     Mat4 View = m_pCamera->GetViewMatrix();
     Mat4 Proj = m_pCamera->GetProjectionMatrix(aspect);
     Mat4 VP = Proj * View;
+
+    auto& Assets = AssetManager::Instance();
+    m_pShader = Assets.GetShader(m_ShaderHandle);
+    m_pScene->ApplyLighting(m_pShader);
+
+    // Grid
+    if (m_pGridHelper && m_pShader) {
+        Mat4 GridMVP = VP;
+        m_pShader->use();
+        m_pShader->setMat4("uMVP", GridMVP.Data());
+        m_pGridHelper->Draw(rhi, VP);
+    }
 
     // Iterate scene and render all MeshRenderers recursively
     std::function<void(const std::vector<std::unique_ptr<Node>>&)> RenderNodes =

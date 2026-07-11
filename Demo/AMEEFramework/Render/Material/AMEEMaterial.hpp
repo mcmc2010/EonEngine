@@ -31,8 +31,10 @@ public:
     virtual void Apply(RHI* rhi);
     void PrintDebug() const;
 
-private:
+protected:
     ShaderHandle m_Shader;
+
+private:
     std::unordered_map<std::string, TextureHandle> m_Textures;
     std::unordered_map<std::string, float> m_Floats;
     std::unordered_map<std::string, Vec4> m_Vectors;
