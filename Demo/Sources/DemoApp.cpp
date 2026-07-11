@@ -7,6 +7,7 @@
 #include "AMEEFramework/Render/Shader/AMEEShaderProgram.hpp"
 #include "AMEEFramework/Render/Texture/AMEETexture2D.hpp"
 #include "AMEEFramework/Render/Material/AMEEStandardMaterial.hpp"
+#include <functional>
 
 namespace AMEE {
 
@@ -125,14 +126,19 @@ void DemoApp::OnRender(double deltaTime, double totalTime)
     Mat4 Proj = m_pCamera->GetProjectionMatrix(aspect);
     Mat4 VP = Proj * View;
 
-    // Iterate scene and render all MeshRenderers
-    for (auto& Child : m_pScene->GetChildren()) {
-        if (auto* Ent = dynamic_cast<Entity*>(Child.get())) {
-            if (auto* Renderer = Ent->GetComponent<MeshRenderer>()) {
-                Renderer->Draw(rhi, VP);
+    // Iterate scene and render all MeshRenderers recursively
+    std::function<void(const std::vector<std::unique_ptr<Node>>&)> RenderNodes =
+        [&](const auto& Children) {
+            for (auto& Child : Children) {
+                if (auto* Ent = dynamic_cast<Entity*>(Child.get())) {
+                    if (auto* Renderer = Ent->GetComponent<MeshRenderer>()) {
+                        Renderer->Draw(rhi, VP);
+                    }
+                }
+                RenderNodes(Child->GetChildren());
             }
-        }
-    }
+        };
+    RenderNodes(m_pScene->GetChildren());
 }
 
 void DemoApp::OnShutdown()

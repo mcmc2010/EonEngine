@@ -57,7 +57,7 @@ AMEEStandardMaterialImporter::Parse(const std::string& Source)
             float Exp;
             LS >> Exp;
             Current->Material->SetSpecularExponent(Exp);
-        } else if (Token == "d" || Token == "Tr" && Current) {
+        } else if ((Token == "d" || Token == "Tr") && Current) {
             float Alpha;
             LS >> Alpha;
             Vec4 C = Current->Material->GetVec4("u_Color");

@@ -53,9 +53,9 @@ Vec3 Camera::GetRight() const
 {
     float YawRad = m_Yaw * DEG2RAD;
     return {
-        std::sin(YawRad),
+        -std::sin(YawRad),
         0,
-        -std::cos(YawRad)
+        std::cos(YawRad)
     };
 }
 

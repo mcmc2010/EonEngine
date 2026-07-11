@@ -145,7 +145,7 @@ ModelData ObjLoader::Load(const std::string& Source)
         for (auto& Face : G.Faces) {
             for (auto& FV : Face) {
                 int TI = HasTex && FV.T >= 0 ? FV.T : 0;
-                int NI = HasNorm && FV.N >= 0 ? FV.N : 0;
+                int NI = HasNorm && FV.N >= 0 ? FV.N : (FV.P >= 0 && FV.P < (int)Normals.size() ? FV.P : 0);
                 if (FV.P < 0 || FV.P >= (int)Positions.size()) continue;
 
                 ObjVertexKey Key = {FV.P, TI, NI};

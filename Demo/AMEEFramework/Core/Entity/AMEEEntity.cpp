@@ -1,4 +1,5 @@
 #include "AMEEEntity.hpp"
+#include "../Components/AMEEComponent.hpp"
 
 namespace AMEE {
 
@@ -20,10 +21,18 @@ Mat4 Entity::GetWorldMatrix() const
 
 void Entity::Update(float DeltaTime)
 {
-    // Update all components
     for (auto& Comp : m_Components) {
         if (Comp && Comp->GetOwner() == this) {
             Comp->Update(DeltaTime);
+        }
+    }
+
+    // Recurse into child entities
+    for (auto& Child : GetChildren()) {
+        if (Child && Child->IsActive()) {
+            if (Entity* ChildEnt = dynamic_cast<Entity*>(Child.get())) {
+                ChildEnt->Update(DeltaTime);
+            }
         }
     }
 }

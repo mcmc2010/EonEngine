@@ -54,27 +54,31 @@ void Material::Apply(RHI* rhi)
 
     Shader->use();
 
+    bool UsedFallback = false;
+
     if (m_Textures.empty()) {
         if (Material* Def = Assets.GetMaterial(BuiltinMaterials::GetDefault())) {
             Def->Apply(rhi);
         }
-        return;
-    }
-
-    int Slot = 0;
-    for (auto& KV : m_Textures) {
-        Texture2D* Tex = Assets.GetTexture(KV.second);
-        if (!Tex) {
-            AMEE_LOG_WARN("Material", "[%s] Missing texture: %s", GetName().c_str(), KV.first.c_str());
+        UsedFallback = true;
+    } else {
+        int Slot = 0;
+        for (auto& KV : m_Textures) {
+            Texture2D* Tex = Assets.GetTexture(KV.second);
+            if (!Tex) {
+                AMEE_LOG_WARN("Material", "[%s] Missing texture: %s", GetName().c_str(), KV.first.c_str());
+                UsedFallback = true;
+                continue;
+            }
+            Tex->Bind(Slot);
+            Shader->setInt(KV.first, Slot);
+            Slot++;
+        }
+        if (UsedFallback) {
             if (Material* Def = Assets.GetMaterial(BuiltinMaterials::GetDefault())) {
                 Def->Apply(rhi);
-                return;
             }
-            continue;
         }
-        Tex->Bind(Slot);
-        Shader->setInt(KV.first, Slot);
-        Slot++;
     }
 
     for (auto& KV : m_Floats) {

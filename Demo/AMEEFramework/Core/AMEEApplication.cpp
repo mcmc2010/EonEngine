@@ -78,10 +78,10 @@ void Application::Shutdown()
 {
     OnShutdown();
 
-    AssetManager::Instance().UnloadAll();
-
     m_pGameLoop->stop();
     m_pGLContext->makeCurrent();
+
+    AssetManager::Instance().UnloadAll();
 
     m_pInput.reset();
     m_pRHI.reset();
