@@ -48,7 +48,7 @@ Vec4 Material::GetVec4(const std::string& Name, const Vec4& Default) const
 
 void Material::Apply(RHI* rhi)
 {
-    auto& Assets = AssetManager::Instance();
+    auto& Assets = AssetManager::GetSingleton();
     ShaderProgram* Shader = Assets.GetShader(m_Shader);
     if (!Shader) return;
 
@@ -92,7 +92,7 @@ void Material::Apply(RHI* rhi)
 
 void Material::PrintDebug() const
 {
-    auto& Assets = AssetManager::Instance();
+    auto& Assets = AssetManager::GetSingleton();
     AMEE_LOG_INFO("Material", "=== [%s] (ID=%llu) ===", GetName().c_str(), GetID());
 
     ShaderProgram* Shader = Assets.GetShader(m_Shader);

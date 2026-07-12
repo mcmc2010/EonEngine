@@ -11,8 +11,8 @@ bool Application::Init(const ApplicationConfig& config)
     AMEE::Logger::init(AMEE::LogLevel::Debug);
 
     // Initialize virtual file system (bundle + cwd mount points)
-    FileSystem::Instance().Initialize();
-    FileSystem::Instance().PrintMounts();
+    FileSystem::GetSingleton().Initialize();
+    FileSystem::GetSingleton().PrintMounts();
 
     // Create platform window
     m_pWindow = CreatePlatformWindow();
@@ -81,7 +81,7 @@ void Application::Shutdown()
     m_pGameLoop->stop();
     m_pGLContext->makeCurrent();
 
-    AssetManager::Instance().UnloadAll();
+    AssetManager::GetSingleton().UnloadAll();
 
     m_pInput.reset();
     m_pRHI.reset();

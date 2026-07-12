@@ -42,7 +42,7 @@ bool Scene::LoadSkybox(RHI* rhi, const std::string& Dir)
         return false;
     }
 
-    auto& Assets = AssetManager::Instance();
+    auto& Assets = AssetManager::GetSingleton();
     m_Skybox = Assets.RegisterMaterial(std::move(Mat));
 
     auto SkyMesh = std::unique_ptr<Mesh>(PrimitiveMesh::CreateCube(rhi, 2.0f));
@@ -56,7 +56,7 @@ void Scene::DrawSkybox(RHI* rhi, const Mat4& View, const Mat4& Proj)
 {
     if (!m_Skybox.IsValid() || !m_SkyboxMesh.IsValid()) return;
 
-    auto& Assets = AssetManager::Instance();
+    auto& Assets = AssetManager::GetSingleton();
     Material* Mat = Assets.GetMaterial(m_Skybox);
     Mesh* SkyMesh = Assets.GetMesh(m_SkyboxMesh);
     if (!Mat || !SkyMesh) return;

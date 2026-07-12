@@ -15,7 +15,7 @@ namespace AMEE {
 bool DemoApp::OnInit()
 {
     RHI* rhi = GetRHI();
-    auto& assets = AssetManager::Instance();
+    auto& assets = AssetManager::GetSingleton();
 
     // Load shader from files
     m_ShaderHandle = assets.LoadShader(rhi, "Assets/Shaders/Default.vert", "Assets/Shaders/Default.frag");
@@ -153,7 +153,7 @@ void DemoApp::OnRender(double deltaTime, double totalTime, double alpha)
     Mat4 Proj = m_pCamera->GetProjectionMatrix(aspect);
     Mat4 VP = Proj * View;
 
-    auto& Assets = AssetManager::Instance();
+    auto& Assets = AssetManager::GetSingleton();
     m_pShader = Assets.GetShader(m_ShaderHandle);
     m_pScene->ApplyLighting(m_pShader);
 
@@ -191,7 +191,7 @@ void DemoApp::OnShutdown()
     m_pCubeEntity = nullptr;
     m_pCubeRenderer = nullptr;
 
-    auto& assets = AssetManager::Instance();
+    auto& assets = AssetManager::GetSingleton();
     assets.UnloadShader(m_ShaderHandle);
     assets.UnloadMesh(m_MeshHandle);
     for (auto& H : m_MaterialHandles) assets.UnloadMaterial(H);

@@ -49,7 +49,7 @@ bool SkyboxMaterial::LoadFaces(RHI* rhi,
 
     // Load all 6 faces
     for (int I = 0; I < 6; I++) {
-        std::string ResolvedPath = FileSystem::Instance().ResolvePath(Paths[I]);
+        std::string ResolvedPath = FileSystem::GetSingleton().ResolvePath(Paths[I]);
         ImageData Img = LoadImage(ResolvedPath.empty() ? Paths[I] : ResolvedPath);
         if (Img.Pixels.empty()) {
             AMEE_LOG_ERROR("SkyboxMaterial", "Failed to load: %s", Paths[I].c_str());
@@ -68,7 +68,7 @@ bool SkyboxMaterial::LoadFaces(RHI* rhi,
     }
 
     // Create shader
-    auto& Assets = AssetManager::Instance();
+    auto& Assets = AssetManager::GetSingleton();
     auto Shader = rhi->CreateShaderProgram();
     Shader->compileFromSource(ShaderType::Vertex, g_VsCubemap, [](const ShaderCompileError& E) {
         AMEE_LOG_ERROR("Skybox", "VS error: %s", E.message.c_str());
@@ -90,7 +90,7 @@ bool SkyboxMaterial::LoadFaces(RHI* rhi,
 
 void SkyboxMaterial::Apply(RHI* rhi)
 {
-    auto& Assets = AssetManager::Instance();
+    auto& Assets = AssetManager::GetSingleton();
     ShaderProgram* Shader = Assets.GetShader(m_Shader);
     if (!Shader || !m_CubemapID) return;
 

@@ -12,7 +12,7 @@ MaterialHandle BuiltinMaterials::gs_ErrorHandle;
 
 void BuiltinMaterials::Initialize(RHI* rhi)
 {
-    auto& Assets = AssetManager::Instance();
+    auto& Assets = AssetManager::GetSingleton();
 
     // Default Gray — solid color, no texture needed
     {

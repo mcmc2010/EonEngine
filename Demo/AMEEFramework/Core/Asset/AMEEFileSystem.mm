@@ -12,11 +12,7 @@
 
 namespace AMEE {
 
-FileSystem& FileSystem::Instance()
-{
-    static FileSystem fs;
-    return fs;
-}
+AMEE_SINGLETON_IMPL(FileSystem)
 
 void FileSystem::Initialize()
 {

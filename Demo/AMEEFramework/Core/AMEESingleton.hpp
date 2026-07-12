@@ -1,27 +1,43 @@
 #ifndef __AMEE_SINGLETON_H__
 #define __AMEE_SINGLETON_H__
 #pragma once
+#include <cassert>
 
 namespace AMEE {
 
 template<typename T>
-class Singleton {
+class SingletonT
+{
 public:
-    static T& Instance()
+    SingletonT()
     {
-        static T instance;
-        return instance;
+        assert(!ms_Singleton);
+        ms_Singleton = static_cast<T*>(this);
     }
 
-    Singleton(const Singleton&) = delete;
-    Singleton& operator=(const Singleton&) = delete;
-    Singleton(Singleton&&) = delete;
-    Singleton& operator=(Singleton&&) = delete;
+    virtual ~SingletonT()
+    {
+        assert(ms_Singleton);
+        ms_Singleton = nullptr;
+    }
+
+    static T& GetSingleton()
+    {
+        assert(ms_Singleton);
+        return (*ms_Singleton);
+    }
+
+    static T* GetSingletonPtr()
+    {
+        return ms_Singleton;
+    }
 
 protected:
-    Singleton() = default;
-    virtual ~Singleton() = default;
+    inline static T* ms_Singleton = nullptr;
 };
+
+// 宏保留用于兼容，但不再需要
+#define AMEE_SINGLETON_IMPL(T)
 
 } // namespace AMEE
 

@@ -19,7 +19,7 @@ void MeshRenderer::Draw(RHI* rhi, const Mat4& ViewProj)
     MeshFilter* Filter = Owner->GetComponent<MeshFilter>();
     if (!Filter || !Filter->GetMesh().IsValid()) return;
 
-    auto& Assets = AssetManager::Instance();
+    auto& Assets = AssetManager::GetSingleton();
     Mesh* Mesh = Assets.GetMesh(Filter->GetMesh());
     if (!Mesh) return;
 

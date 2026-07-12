@@ -16,8 +16,8 @@ namespace AMEE {
 
 class RHI;
 
-class AssetManager : public Singleton<AssetManager> {
-    friend class Singleton<AssetManager>;
+class AssetManager : public SingletonT<AssetManager> {
+    friend class SingletonT<AssetManager>;
 public:
     // Texture
     TextureHandle LoadTexture(RHI* rhi, const std::string& LogicalPath);

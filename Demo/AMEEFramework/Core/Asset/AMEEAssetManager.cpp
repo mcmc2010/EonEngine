@@ -12,6 +12,8 @@
 
 namespace AMEE {
 
+AMEE_SINGLETON_IMPL(AssetManager)
+
 // ─── Texture ──────────────────────────────────────────────────────────────────
 
 TextureHandle AssetManager::LoadTexture(RHI* rhi, const std::string& LogicalPath)
@@ -25,7 +27,7 @@ TextureHandle AssetManager::LoadTexture(RHI* rhi, const std::string& LogicalPath
         }
     }
 
-    std::string PhysicalPath = FileSystem::Instance().ResolvePath(LogicalPath);
+    std::string PhysicalPath = FileSystem::GetSingleton().ResolvePath(LogicalPath);
     if (PhysicalPath.empty()) {
         AMEE_LOG_ERROR("AssetManager", "Cannot resolve path: %s", LogicalPath.c_str());
         return {};
@@ -81,8 +83,8 @@ ShaderHandle AssetManager::LoadShader(RHI* rhi, const std::string& VsPath, const
         }
     }
 
-    std::string VsSource = FileSystem::Instance().ReadText(VsPath);
-    std::string FsSource = FileSystem::Instance().ReadText(FsPath);
+    std::string VsSource = FileSystem::GetSingleton().ReadText(VsPath);
+    std::string FsSource = FileSystem::GetSingleton().ReadText(FsPath);
     if (VsSource.empty() || FsSource.empty()) {
         AMEE_LOG_ERROR("AssetManager", "Failed to read shader sources: %s / %s",
                        VsPath.c_str(), FsPath.c_str());
@@ -160,7 +162,7 @@ MeshHandle AssetManager::LoadModel(RHI* rhi, const std::string& LogicalPath,
 {
     if (!rhi) return {};
 
-    std::string Source = FileSystem::Instance().ReadText(LogicalPath);
+    std::string Source = FileSystem::GetSingleton().ReadText(LogicalPath);
     if (Source.empty()) {
         AMEE_LOG_ERROR("AssetManager", "Failed to read model: %s", LogicalPath.c_str());
         return {};
@@ -187,7 +189,7 @@ MeshHandle AssetManager::LoadModel(RHI* rhi, const std::string& LogicalPath,
     if (!MtlName.empty()) {
         std::string ObjDir = LogicalPath.substr(0, LogicalPath.find_last_of('/') + 1);
         std::string MtlPath = ObjDir + MtlName;
-        std::string MtlSource = FileSystem::Instance().ReadText(MtlPath);
+        std::string MtlSource = FileSystem::GetSingleton().ReadText(MtlPath);
 
         if (!MtlSource.empty()) {
             auto Imported = AMEEStandardMaterialImporter::Parse(MtlSource);

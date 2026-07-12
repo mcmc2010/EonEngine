@@ -1,16 +1,16 @@
 #ifndef __AMEE_FILESYSTEM_H__
 #define __AMEE_FILESYSTEM_H__
 #pragma once
+#include "../AMEESingleton.hpp"
 #include <string>
 #include <vector>
 #include <cstdint>
 
 namespace AMEE {
 
-class FileSystem {
+class FileSystem : public SingletonT<FileSystem> {
+    friend class SingletonT<FileSystem>;
 public:
-    static FileSystem& Instance();
-
     void Initialize();
 
     void Mount(const std::string& LogicalPrefix, const std::string& PhysicalPath);
