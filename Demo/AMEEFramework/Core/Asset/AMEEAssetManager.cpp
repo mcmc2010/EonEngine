@@ -126,11 +126,14 @@ void AssetManager::InitBuiltinShaders(RHI* rhi)
 
 void AssetManager::InitBuiltinMaterials(RHI* rhi)
 {
-    // Default material (uses default shader)
+    // Default material (PBR Standard + gray texture)
     {
-        auto mat = std::make_unique<Material>();
+        auto mat = std::make_unique<StandardMaterial>();
         mat->SetName("_Builtin_Default");
         mat->SetShader(GetBuiltinShader(BuiltID::Shader_Default));
+        mat->SetAlbedoMap(GetBuiltinTexture(BuiltID::Texture_Default)); // 浅灰纹理
+        mat->SetNormalMap(GetBuiltinTexture(BuiltID::Texture_Normal));
+        
         uint64_t id = static_cast<uint64_t>(BuiltID::Material_Default);
         MaterialHandle h = RegisterMaterial(std::move(mat), id, true);
         m_BuiltinMaterials[id] = h;
@@ -141,7 +144,7 @@ void AssetManager::InitBuiltinMaterials(RHI* rhi)
         auto mat = std::make_unique<Material>();
         mat->SetName("_Builtin_Missing");
         mat->SetShader(GetBuiltinShader(BuiltID::Shader_Unlit));
-        mat->SetTexture("uTexture", GetBuiltinTexture(BuiltID::Texture_Missing));
+        mat->SetTexture("u_MainTex", GetBuiltinTexture(BuiltID::Texture_Missing));
         uint64_t id = static_cast<uint64_t>(BuiltID::Material_Missing);
         MaterialHandle h = RegisterMaterial(std::move(mat), id, true);
         m_BuiltinMaterials[id] = h;

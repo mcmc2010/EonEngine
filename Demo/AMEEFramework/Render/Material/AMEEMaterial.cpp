@@ -1,8 +1,8 @@
 #include "AMEEMaterial.hpp"
-#include "AMEEBuiltinMaterials.hpp"
 #include "../Shader/AMEEShaderProgram.hpp"
 #include "../Texture/AMEETexture2D.hpp"
 #include "../../Core/Asset/AMEEAssetManager.hpp"
+#include "../../Core/AMEEBuiltIDs.hpp"
 #include "../../Core/Log/AMEELog.hpp"
 
 namespace AMEE {
@@ -54,31 +54,16 @@ void Material::Apply(RHI* rhi)
 
     Shader->use();
 
-    bool UsedFallback = false;
-
-    if (m_Textures.empty()) {
-        if (Material* Def = Assets.GetMaterial(BuiltinMaterials::GetDefault())) {
-            Def->Apply(rhi);
+    int Slot = 0;
+    for (auto& KV : m_Textures) {
+        Texture2D* Tex = Assets.GetTexture(KV.second);
+        if (!Tex) {
+            AMEE_LOG_WARN("Material", "[%s] Missing texture: %s", GetName().c_str(), KV.first.c_str());
+            continue;
         }
-        UsedFallback = true;
-    } else {
-        int Slot = 0;
-        for (auto& KV : m_Textures) {
-            Texture2D* Tex = Assets.GetTexture(KV.second);
-            if (!Tex) {
-                AMEE_LOG_WARN("Material", "[%s] Missing texture: %s", GetName().c_str(), KV.first.c_str());
-                UsedFallback = true;
-                continue;
-            }
-            Tex->Bind(Slot);
-            Shader->setInt(KV.first, Slot);
-            Slot++;
-        }
-        if (UsedFallback) {
-            if (Material* Def = Assets.GetMaterial(BuiltinMaterials::GetDefault())) {
-                Def->Apply(rhi);
-            }
-        }
+        Tex->Bind(Slot);
+        Shader->setInt(KV.first, Slot);
+        Slot++;
     }
 
     for (auto& KV : m_Floats) {
@@ -101,14 +86,14 @@ void Material::PrintDebug() const
                   Shader ? "OK" : "NOT FOUND");
 
     if (m_Textures.empty()) {
-        AMEE_LOG_INFO("Material", "  Textures: (none — using fallback pink)");
+        AMEE_LOG_INFO("Material", "  Textures: (none)");
     } else {
         for (auto& KV : m_Textures) {
             Texture2D* Tex = Assets.GetTexture(KV.second);
             AMEE_LOG_INFO("Material", "  Texture [%s] handle=%s %s",
                           KV.first.c_str(),
                           KV.second.IsValid() ? "valid" : "INVALID",
-                          Tex ? "OK" : "MISSING → PINK");
+                          Tex ? "OK" : "MISSING");
         }
     }
 

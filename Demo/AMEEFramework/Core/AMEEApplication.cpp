@@ -3,7 +3,6 @@
 #include "Asset/AMEEFileSystem.hpp"
 #include "Asset/AMEEAssetManager.hpp"
 #include "../Render/Texture/AMEEImage.hpp"
-#include "../Render/Material/AMEEBuiltinMaterials.hpp"
 
 namespace AMEE {
 

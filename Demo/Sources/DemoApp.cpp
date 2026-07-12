@@ -81,6 +81,21 @@ bool DemoApp::OnInit()
     m_pGridHelper->Create(rhi, 10.0f, 10);
     m_pScene->AddChild(std::move(GridEnt));
 
+    // ─── Ground Plane ─────────────────────────────────────────────────────
+
+    auto GroundEnt = std::make_unique<Entity>();
+    GroundEnt->SetName("Ground");
+    GroundEnt->SetPosition({0.0f, 0.0f, 0.0f}); // Slightly below grid to avoid z-fighting
+
+    auto* GroundFilter = GroundEnt->AddComponent<MeshFilter>();
+    Mesh* GroundMesh = PrimitiveMesh::CreatePlane(rhi, 10.0f, 10.0f);
+    GroundFilter->SetMesh(assets.RegisterMesh(std::unique_ptr<Mesh>(GroundMesh), "_GroundPlane"));
+
+    auto* GroundRenderer = GroundEnt->AddComponent<MeshRenderer>();
+    GroundRenderer->m_Materials.push_back(assets.GetBuiltinMaterial(BuiltID::Material_Default));
+
+    m_pScene->AddChild(std::move(GroundEnt));
+
     // ─── Camera Entity ─────────────────────────────────────────────────────
 
     auto CameraEntity = std::make_unique<Entity>();
