@@ -12,7 +12,7 @@ enum class ObjectType {
     Entity    = 1,
     Component = 2,
     //
-    Resoursce = 100,
+    Resource = 100,
 };
 
 class Object {

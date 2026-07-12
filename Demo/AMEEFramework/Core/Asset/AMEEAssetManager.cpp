@@ -12,12 +12,6 @@
 
 namespace AMEE {
 
-AssetManager& AssetManager::Instance()
-{
-    static AssetManager mgr;
-    return mgr;
-}
-
 // ─── Texture ──────────────────────────────────────────────────────────────────
 
 TextureHandle AssetManager::LoadTexture(RHI* rhi, const std::string& LogicalPath)

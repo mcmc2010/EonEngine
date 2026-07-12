@@ -8,7 +8,7 @@
 namespace AMEE {
 
 Material::Material()
-    : Object(ObjectType::Resoursce)
+    : Object(ObjectType::Resource)
 {
     SetName("New Material");
 }

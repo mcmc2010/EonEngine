@@ -14,7 +14,7 @@ IDType Object::ToIDType(ObjectType Type)
         case ObjectType::Node:      return IDType::Node;
         case ObjectType::Entity:    return IDType::Entity;
         case ObjectType::Component: return IDType::Component;
-        case ObjectType::Resoursce: return IDType::Resource;
+        case ObjectType::Resource:  return IDType::Resource;
     }
     return IDType::Node;
 }

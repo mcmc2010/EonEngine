@@ -1,7 +1,12 @@
 #ifndef __AMEE_ASSETMANAGER_H__
 #define __AMEE_ASSETMANAGER_H__
 #pragma once
+#include "../AMEESingleton.hpp"
 #include "AMEEAssetHandle.hpp"
+#include "../../Render/Texture/AMEETexture2D.hpp"
+#include "../../Render/Shader/AMEEShaderProgram.hpp"
+#include "../../Render/AMEEMesh.hpp"
+#include "../../Render/Material/AMEEMaterial.hpp"
 #include <string>
 #include <vector>
 #include <memory>
@@ -10,18 +15,10 @@
 namespace AMEE {
 
 class RHI;
-class Texture2D;
-class ShaderProgram;
-class Mesh;
-class Material;
 
-class AssetManager {
+class AssetManager : public Singleton<AssetManager> {
+    friend class Singleton<AssetManager>;
 public:
-    static AssetManager& Instance();
-
-    AssetManager(const AssetManager&) = delete;
-    AssetManager& operator=(const AssetManager&) = delete;
-
     // Texture
     TextureHandle LoadTexture(RHI* rhi, const std::string& LogicalPath);
     TextureHandle RegisterTexture(std::unique_ptr<Texture2D> InTex, const std::string& Name);
