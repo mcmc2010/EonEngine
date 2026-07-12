@@ -14,6 +14,8 @@ enum class IDType {
     Resource = 7,
 };
 
+constexpr uint64_t ID_NULL = 0x0000000000000000ULL;
+
 class IDGenerator {
 public:
     // Generate unique ID with type prefix
@@ -39,7 +41,7 @@ public:
     // Check if ID is valid (non-zero)
     static bool IsValid(uint64_t ID)
     {
-        return ID != 0;
+        return ID != ID_NULL;
     }
 
     // Reset counter (for testing)

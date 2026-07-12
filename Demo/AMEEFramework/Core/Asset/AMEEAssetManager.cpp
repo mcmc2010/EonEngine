@@ -14,6 +14,158 @@ namespace AMEE {
 
 AMEE_SINGLETON_IMPL(AssetManager)
 
+// ─── Built-in Resources ──────────────────────────────────────────────────────
+
+void AssetManager::InitializeBuiltins(RHI* rhi)
+{
+    if (!rhi) {
+        AMEE_LOG_ERROR("AssetManager", "Cannot initialize builtins: RHI is null");
+        return;
+    }
+
+    InitBuiltinTextures(rhi);
+    InitBuiltinShaders(rhi);
+    InitBuiltinMaterials(rhi);
+
+    AMEE_LOG_INFO("AssetManager", "Built-in resources initialized");
+}
+
+void AssetManager::InitBuiltinTextures(RHI* rhi)
+{
+    // 1x1 White texture (255, 255, 255, 255)
+    {
+        uint8_t pixels[] = { 255, 255, 255, 255 };
+        auto tex = std::make_unique<Texture2D>();
+        if (tex->Create(rhi, {std::vector<uint8_t>(pixels, pixels + 4), 1, 1, 4})) {
+            uint64_t id = static_cast<uint64_t>(BuiltID::Texture_White);
+            TextureHandle h = RegisterTexture(std::move(tex), "_Builtin_White", id, true);
+            m_BuiltinTextures[id] = h;
+        }
+    }
+
+    // 1x1 Black texture (0, 0, 0, 255)
+    {
+        uint8_t pixels[] = { 0, 0, 0, 255 };
+        auto tex = std::make_unique<Texture2D>();
+        if (tex->Create(rhi, {std::vector<uint8_t>(pixels, pixels + 4), 1, 1, 4})) {
+            uint64_t id = static_cast<uint64_t>(BuiltID::Texture_Black);
+            TextureHandle h = RegisterTexture(std::move(tex), "_Builtin_Black", id, true);
+            m_BuiltinTextures[id] = h;
+        }
+    }
+
+    // 1x1 Normal map texture (128, 128, 255, 255) - pointing up
+    {
+        uint8_t pixels[] = { 128, 128, 255, 255 };
+        auto tex = std::make_unique<Texture2D>();
+        if (tex->Create(rhi, {std::vector<uint8_t>(pixels, pixels + 4), 1, 1, 4})) {
+            uint64_t id = static_cast<uint64_t>(BuiltID::Texture_Normal);
+            TextureHandle h = RegisterTexture(std::move(tex), "_Builtin_Normal", id, true);
+            m_BuiltinTextures[id] = h;
+        }
+    }
+
+    // 1x1 Missing texture (magenta/pink) (255, 0, 255, 255)
+    {
+        uint8_t pixels[] = { 255, 0, 255, 255 };
+        auto tex = std::make_unique<Texture2D>();
+        if (tex->Create(rhi, {std::vector<uint8_t>(pixels, pixels + 4), 1, 1, 4})) {
+            uint64_t id = static_cast<uint64_t>(BuiltID::Texture_Missing);
+            TextureHandle h = RegisterTexture(std::move(tex), "_Builtin_Missing", id, true);
+            m_BuiltinTextures[id] = h;
+        }
+    }
+
+    // 1x1 Light gray texture (192, 192, 192, 255) (Default)
+    {
+        uint8_t pixels[] = { 192, 192, 192, 255 };
+        auto tex = std::make_unique<Texture2D>();
+        if (tex->Create(rhi, {std::vector<uint8_t>(pixels, pixels + 4), 1, 1, 4})) {
+            uint64_t id = static_cast<uint64_t>(BuiltID::Texture_Default);
+            TextureHandle h = RegisterTexture(std::move(tex), "_Builtin_Default", id, true);
+            m_BuiltinTextures[id] = h;
+        }
+    }
+
+    AMEE_LOG_INFO("AssetManager", "Built-in textures: %zu", m_BuiltinTextures.size());
+}
+
+void AssetManager::InitBuiltinShaders(RHI* rhi)
+{
+    // Default shader (vertex color + MVP)
+    {
+        uint64_t id = static_cast<uint64_t>(BuiltID::Shader_Default);
+        ShaderHandle h = LoadShader(rhi, "Shaders/Default.vert", "Shaders/Default.frag", "_Built_Default", id, true);
+        if (h.IsValid()) {
+            m_BuiltinShaders[id] = h;
+        }
+    }
+
+    // Unlit texture shader
+    {
+        uint64_t id = static_cast<uint64_t>(BuiltID::Shader_Unlit);
+        ShaderHandle h = LoadShader(rhi, "Shaders/Unlit.vert", "Shaders/Unlit.frag", "_Built_Unlit", id, true);
+        if (h.IsValid()) {
+            m_BuiltinShaders[id] = h;
+        }
+    }
+
+    // Skybox cubemap shader
+    {
+        uint64_t id = static_cast<uint64_t>(BuiltID::Shader_Skybox);
+        ShaderHandle h = LoadShader(rhi, "Shaders/Skybox.vert", "Shaders/Skybox.frag", "_Built_Skybox", id, true);
+        if (h.IsValid()) {
+            m_BuiltinShaders[id] = h;
+        }
+    }
+
+    AMEE_LOG_INFO("AssetManager", "Built-in shaders: %zu", m_BuiltinShaders.size());
+}
+
+void AssetManager::InitBuiltinMaterials(RHI* rhi)
+{
+    // Default material (uses default shader)
+    {
+        auto mat = std::make_unique<Material>();
+        mat->SetName("_Builtin_Default");
+        mat->SetShader(GetBuiltinShader(BuiltID::Shader_Default));
+        uint64_t id = static_cast<uint64_t>(BuiltID::Material_Default);
+        MaterialHandle h = RegisterMaterial(std::move(mat), id, true);
+        m_BuiltinMaterials[id] = h;
+    }
+
+    // Missing material (uses unlit shader + missing texture)
+    {
+        auto mat = std::make_unique<Material>();
+        mat->SetName("_Builtin_Missing");
+        mat->SetShader(GetBuiltinShader(BuiltID::Shader_Unlit));
+        mat->SetTexture("uTexture", GetBuiltinTexture(BuiltID::Texture_Missing));
+        uint64_t id = static_cast<uint64_t>(BuiltID::Material_Missing);
+        MaterialHandle h = RegisterMaterial(std::move(mat), id, true);
+        m_BuiltinMaterials[id] = h;
+    }
+
+    AMEE_LOG_INFO("AssetManager", "Built-in materials: %zu", m_BuiltinMaterials.size());
+}
+
+ShaderHandle AssetManager::GetBuiltinShader(BuiltID id) const
+{
+    auto it = m_BuiltinShaders.find(static_cast<uint64_t>(id));
+    return (it != m_BuiltinShaders.end()) ? it->second : ShaderHandle{};
+}
+
+TextureHandle AssetManager::GetBuiltinTexture(BuiltID id) const
+{
+    auto it = m_BuiltinTextures.find(static_cast<uint64_t>(id));
+    return (it != m_BuiltinTextures.end()) ? it->second : TextureHandle{};
+}
+
+MaterialHandle AssetManager::GetBuiltinMaterial(BuiltID id) const
+{
+    auto it = m_BuiltinMaterials.find(static_cast<uint64_t>(id));
+    return (it != m_BuiltinMaterials.end()) ? it->second : MaterialHandle{};
+}
+
 // ─── Texture ──────────────────────────────────────────────────────────────────
 
 TextureHandle AssetManager::LoadTexture(RHI* rhi, const std::string& LogicalPath)
@@ -42,13 +194,13 @@ TextureHandle AssetManager::LoadTexture(RHI* rhi, const std::string& LogicalPath
     return RegisterTexture(std::move(Tex), LogicalPath);
 }
 
-TextureHandle AssetManager::RegisterTexture(std::unique_ptr<Texture2D> InTex, const std::string& Name)
+TextureHandle AssetManager::RegisterTexture(std::unique_ptr<Texture2D> InTex, const std::string& Name, uint64_t ID, bool IsBuiltIn)
 {
     if (!InTex) return {};
     uint32_t Idx = static_cast<uint32_t>(m_Textures.size());
     m_Textures.push_back({std::move(InTex), Name, 1});
     AMEE_LOG_INFO("AssetManager", "Registered texture [%u]: %s", Idx, Name.c_str());
-    return {Idx};
+    return TextureHandle::Make(Idx, ID, IsBuiltIn);
 }
 
 Texture2D* AssetManager::GetTexture(TextureHandle Handle) const
@@ -72,14 +224,14 @@ void AssetManager::UnloadTexture(TextureHandle Handle)
 
 // ─── Shader ────────────────────────────────────────────────────────────────────
 
-ShaderHandle AssetManager::LoadShader(RHI* rhi, const std::string& VsPath, const std::string& FsPath)
+ShaderHandle AssetManager::LoadShader(RHI* rhi, const std::string& VsPath, const std::string& FsPath, const std::string& Name, uint64_t ID, bool IsBuiltIn)
 {
     if (!rhi) return {};
 
     for (size_t i = 0; i < m_Shaders.size(); ++i) {
         if (m_Shaders[i].VsPath == VsPath && m_Shaders[i].FsPath == FsPath && m_Shaders[i].Resource) {
             m_Shaders[i].RefCount++;
-            return {static_cast<uint32_t>(i)};
+            return ShaderHandle::Make(static_cast<uint32_t>(i));
         }
     }
 
@@ -115,16 +267,17 @@ ShaderHandle AssetManager::LoadShader(RHI* rhi, const std::string& VsPath, const
         return {};
     }
 
-    return RegisterShader(std::move(Shader), VsPath + " + " + FsPath);
+    std::string RegisterName = Name.empty() ? (VsPath + " + " + FsPath) : Name;
+    return RegisterShader(std::move(Shader), RegisterName, ID, IsBuiltIn);
 }
 
-ShaderHandle AssetManager::RegisterShader(std::unique_ptr<ShaderProgram> InShader, const std::string& Name)
+ShaderHandle AssetManager::RegisterShader(std::unique_ptr<ShaderProgram> InShader, const std::string& Name, uint64_t ID, bool IsBuiltIn)
 {
     if (!InShader) return {};
     uint32_t Idx = static_cast<uint32_t>(m_Shaders.size());
     m_Shaders.push_back({std::move(InShader), Name, "", 1});
     AMEE_LOG_INFO("AssetManager", "Registered shader [%u]: %s", Idx, Name.c_str());
-    return {Idx};
+    return ShaderHandle::Make(Idx, ID, IsBuiltIn);
 }
 
 ShaderProgram* AssetManager::GetShader(ShaderHandle Handle) const
@@ -148,13 +301,13 @@ void AssetManager::UnloadShader(ShaderHandle Handle)
 
 // ─── Mesh ──────────────────────────────────────────────────────────────────────
 
-MeshHandle AssetManager::RegisterMesh(std::unique_ptr<Mesh> InMesh, const std::string& Name)
+MeshHandle AssetManager::RegisterMesh(std::unique_ptr<Mesh> InMesh, const std::string& Name, uint64_t ID, bool IsBuiltIn)
 {
     if (!InMesh) return {};
     uint32_t Idx = static_cast<uint32_t>(m_Meshes.size());
     m_Meshes.push_back({std::move(InMesh), Name, 1});
     AMEE_LOG_INFO("AssetManager", "Registered mesh [%u]: %s", Idx, Name.c_str());
-    return {Idx};
+    return MeshHandle::Make(Idx, ID, IsBuiltIn);
 }
 
 MeshHandle AssetManager::LoadModel(RHI* rhi, const std::string& LogicalPath,
@@ -244,13 +397,13 @@ void AssetManager::UnloadMesh(MeshHandle Handle)
 
 // ─── Material ─────────────────────────────────────────────────────────────────
 
-MaterialHandle AssetManager::RegisterMaterial(std::unique_ptr<Material> InMat)
+MaterialHandle AssetManager::RegisterMaterial(std::unique_ptr<Material> InMat, uint64_t ID, bool IsBuiltIn)
 {
     if (!InMat) return {};
     uint32_t Idx = static_cast<uint32_t>(m_Materials.size());
     m_Materials.push_back({std::move(InMat), "", 1});
     AMEE_LOG_INFO("AssetManager", "Registered material [%u]: %s", Idx, m_Materials.back().Resource->GetName().c_str());
-    return {Idx};
+    return MaterialHandle::Make(Idx, ID, IsBuiltIn);
 }
 
 Material* AssetManager::GetMaterial(MaterialHandle Handle) const

@@ -5,31 +5,10 @@
 #include "../../Core/Asset/AMEEAssetManager.hpp"
 #include "../../Core/Asset/AMEEFileSystem.hpp"
 #include "../../Core/Log/AMEELog.hpp"
+#include "../../Core/AMEEBuiltIDs.hpp"
 #include "../../Render/AMEERHI.hpp"
 
 namespace AMEE {
-
-static const char* g_VsCubemap = R"(
-#version 410 core
-layout(location = 0) in vec3 aPos;
-uniform mat4 uVP;
-out vec3 vTexCoord;
-void main() {
-    vec4 pos = uVP * vec4(aPos, 1.0);
-    gl_Position = pos.xyww;
-    vTexCoord = aPos;
-}
-)";
-
-static const char* g_FsCubemap = R"(
-#version 410 core
-in vec3 vTexCoord;
-uniform samplerCube u_Cubemap;
-out vec4 fragColor;
-void main() {
-    fragColor = texture(u_Cubemap, vTexCoord);
-}
-)";
 
 SkyboxMaterial::SkyboxMaterial()
 {
@@ -67,22 +46,9 @@ bool SkyboxMaterial::LoadFaces(RHI* rhi,
         return false;
     }
 
-    // Create shader
+    // Use built-in skybox shader
     auto& Assets = AssetManager::GetSingleton();
-    auto Shader = rhi->CreateShaderProgram();
-    Shader->compileFromSource(ShaderType::Vertex, g_VsCubemap, [](const ShaderCompileError& E) {
-        AMEE_LOG_ERROR("Skybox", "VS error: %s", E.message.c_str());
-    });
-    Shader->compileFromSource(ShaderType::Fragment, g_FsCubemap, [](const ShaderCompileError& E) {
-        AMEE_LOG_ERROR("Skybox", "FS error: %s", E.message.c_str());
-    });
-    if (!Shader->link([](const std::string& E) {
-        AMEE_LOG_ERROR("Skybox", "Link error: %s", E.c_str());
-    })) {
-        AMEE_LOG_ERROR("SkyboxMaterial", "Shader link failed");
-        return false;
-    }
-    SetShader(Assets.RegisterShader(std::move(Shader), "_SkyboxShader"));
+    SetShader(Assets.GetBuiltinShader(BuiltID::Shader_Skybox));
 
     AMEE_LOG_INFO("SkyboxMaterial", "Cubemap loaded (%dx%d)", FaceW, FaceH);
     return true;

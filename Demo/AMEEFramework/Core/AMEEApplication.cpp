@@ -46,8 +46,8 @@ bool Application::Init(const ApplicationConfig& config)
         return false;
     }
 
-    // Initialize builtin materials (Default-Gray, Error-Pink)
-    BuiltinMaterials::Initialize(m_pRHI.get());
+    // Initialize built-in resources (textures, shaders, materials)
+    AssetManager::GetSingleton().InitializeBuiltins(m_pRHI.get());
 
     // User-defined init
     if (!OnInit()) {
