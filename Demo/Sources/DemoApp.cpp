@@ -17,10 +17,10 @@ bool DemoApp::OnInit()
     RHI* rhi = GetRHI();
     auto& assets = AssetManager::GetSingleton();
 
-    // Load shader from files
-    m_ShaderHandle = assets.LoadShader(rhi, "Assets/Shaders/Default.vert", "Assets/Shaders/Default.frag");
+    // Use built-in default shader (PBR ready)
+    m_ShaderHandle = assets.GetBuiltinShader(BuiltID::Shader_Default);
     if (!m_ShaderHandle.IsValid()) {
-        AMEE_LOG_ERROR("DemoApp", "Failed to load shader");
+        AMEE_LOG_ERROR("DemoApp", "Built-in default shader not found");
         return false;
     }
 
@@ -31,7 +31,7 @@ bool DemoApp::OnInit()
 
     // ─── Skybox ────────────────────────────────────────────────────────────
 
-    m_pScene->LoadSkybox(rhi, "Assets/Skybox");
+    m_pScene->LoadSkybox(rhi, "Assets/Skybox/");
 
     // ─── Model Entity (loaded from OBJ + MTL) ──────────────────────────────
 
@@ -89,6 +89,7 @@ bool DemoApp::OnInit()
 
     m_pCamera = CameraEntity->AddComponent<Camera>(60.0f, 0.1f, 1000.0f);
     m_pCamera->SetRotation(-90.0f, 0);
+    m_pCamera->UpdateAspect(GetGLContext());
     m_pCameraEntity = CameraEntity.get();
 
     m_pScene->AddChild(std::move(CameraEntity));
@@ -145,12 +146,11 @@ void DemoApp::OnRender(double deltaTime, double totalTime, double alpha)
                        m_pScene->GetAmbientColor().z, 1.0f);
     rhi->clear();
 
-    int w, h;
-    GetGLContext()->getSize(w, h);
-    float aspect = (float)w / (float)h;
+    // Update camera aspect ratio (in case window resized)
+    m_pCamera->UpdateAspect(GetGLContext());
 
     Mat4 View = m_pCamera->GetViewMatrix();
-    Mat4 Proj = m_pCamera->GetProjectionMatrix(aspect);
+    Mat4 Proj = m_pCamera->GetProjectionMatrix();
     Mat4 VP = Proj * View;
 
     auto& Assets = AssetManager::GetSingleton();
@@ -158,7 +158,7 @@ void DemoApp::OnRender(double deltaTime, double totalTime, double alpha)
     m_pScene->ApplyLighting(m_pShader);
 
     // Skybox
-    m_pScene->DrawSkybox(rhi, View, Proj);
+    m_pScene->DrawSkybox(rhi, m_pCamera);
 
     // Grid
     if (m_pGridHelper && m_pShader) {

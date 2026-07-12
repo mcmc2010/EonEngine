@@ -14,6 +14,8 @@ class Light;
 class ShaderProgram;
 class RHI;
 
+class Camera;
+
 struct DirectionalLightData {
     Vec3 Direction;
     Vec4 Color;       // RGB + Intensity
@@ -29,8 +31,8 @@ public:
     // Skybox & Environment
     void SetSkybox(MaterialHandle Handle) { m_Skybox = Handle; }
     MaterialHandle GetSkybox() const { return m_Skybox; }
-    bool LoadSkybox(RHI* rhi, const std::string& Directory);
-    void DrawSkybox(RHI* rhi, const Mat4& View, const Mat4& Proj);
+    bool LoadSkybox(RHI* rhi, const std::string& Path);
+    void DrawSkybox(RHI* rhi, Camera* pCamera);
     void SetAmbientColor(const Vec4& Color) { m_AmbientColor = Color; }
     Vec4 GetAmbientColor() const { return m_AmbientColor; }
 
@@ -41,7 +43,7 @@ public:
 
 private:
     MaterialHandle m_Skybox;
-    MeshHandle m_SkyboxMesh;
+    CubemapHandle m_SkyboxCubemap;
     Vec4 m_AmbientColor = {0.15f, 0.15f, 0.2f, 1.0f};
     std::vector<Light*> m_Lights;
     DirectionalLightData m_SunData;

@@ -1,4 +1,5 @@
 #include "AMEEScene.hpp"
+#include "AMEECamera.hpp"
 #include "Entity/AMEEEntity.hpp"
 #include "Components/AMEELight.hpp"
 #include "Components/AMEEMeshFilter.hpp"
@@ -6,8 +7,6 @@
 #include "../Render/AMEEMesh.hpp"
 #include "../Render/AMEERHI.hpp"
 #include "../Render/Material/AMEEMaterial.hpp"
-#include "../Render/Material/AMEESkyboxMaterial.hpp"
-#include "../Core/Meshes/AMEEPrimitiveMesh.hpp"
 #include "../Core/Asset/AMEEAssetManager.hpp"
 #include "Log/AMEELog.hpp"
 
@@ -27,48 +26,63 @@ static void CollectLightsRecursive(const std::vector<std::unique_ptr<Node>>& Chi
     }
 }
 
-bool Scene::LoadSkybox(RHI* rhi, const std::string& Dir)
+bool Scene::LoadSkybox(RHI* rhi, const std::string& Path)
 {
-    std::string Base = Dir;
-    if (!Base.empty() && Base.back() != '/') Base += '/';
+    auto& Assets = AssetManager::GetSingleton();
 
-    auto Mat = std::make_unique<SkyboxMaterial>();
-    if (!Mat->LoadFaces(rhi,
-            Base + "px.png", Base + "nx.png",
-            Base + "py.png", Base + "ny.png",
-            Base + "pz.png", Base + "nz.png"))
-    {
-        AMEE_LOG_ERROR("Scene", "Failed to load cubemap from %s", Dir.c_str());
+    // Detect if path is an image file (cross format) or directory (6 separate images)
+    bool IsCrossImage = (Path.find(".png") != std::string::npos ||
+                         Path.find(".jpg") != std::string::npos ||
+                         Path.find(".jpeg") != std::string::npos ||
+                         Path.find(".bmp") != std::string::npos ||
+                         Path.find(".tga") != std::string::npos);
+
+    if (IsCrossImage) {
+        m_SkyboxCubemap = Assets.LoadCubemapCross(rhi, Path);
+    } else {
+        m_SkyboxCubemap = Assets.LoadCubemap(rhi, Path);
+    }
+
+    if (!m_SkyboxCubemap.IsValid()) {
+        AMEE_LOG_ERROR("Scene", "Failed to load skybox from %s", Path.c_str());
         return false;
     }
 
-    auto& Assets = AssetManager::GetSingleton();
-    m_Skybox = Assets.RegisterMaterial(std::move(Mat));
+    // Use built-in skybox material
+    m_Skybox = Assets.GetBuiltinMaterial(BuiltID::Material_Skybox);
 
-    auto SkyMesh = std::unique_ptr<Mesh>(PrimitiveMesh::CreateCube(rhi, 2.0f));
-    m_SkyboxMesh = Assets.RegisterMesh(std::move(SkyMesh), "_SkyboxCube");
-
-    AMEE_LOG_INFO("Scene", "Skybox loaded from %s", Dir.c_str());
+    AMEE_LOG_INFO("Scene", "Skybox loaded from %s", Path.c_str());
     return true;
 }
 
-void Scene::DrawSkybox(RHI* rhi, const Mat4& View, const Mat4& Proj)
+void Scene::DrawSkybox(RHI* rhi, Camera* pCamera)
 {
-    if (!m_Skybox.IsValid() || !m_SkyboxMesh.IsValid()) return;
+    if (!m_Skybox.IsValid() || !m_SkyboxCubemap.IsValid() || !pCamera) return;
 
     auto& Assets = AssetManager::GetSingleton();
     Material* Mat = Assets.GetMaterial(m_Skybox);
-    Mesh* SkyMesh = Assets.GetMesh(m_SkyboxMesh);
-    if (!Mat || !SkyMesh) return;
+    ShaderProgram* Shader = Assets.GetShader(Mat->GetShader());
+    if (!Mat || !Shader) return;
+
+    Mat4 View = pCamera->GetViewMatrix();
+    Mat4 Proj = pCamera->GetProjectionMatrix();
 
     rhi->setDepthMask(false);
 
     Mat4 SkyVP = Proj * View;
     SkyVP.at(3, 0) = SkyVP.at(3, 1) = SkyVP.at(3, 2) = 0;
 
-    Mat->Apply(rhi);
-    Assets.GetShader(Mat->GetShader())->setMat4("uVP", SkyVP.Data());
-    SkyMesh->Draw();
+    Shader->use();
+    uint32_t cubemapGLID = Assets.GetCubemap(m_SkyboxCubemap);
+    rhi->bindCubemap(cubemapGLID, 0);
+    Shader->setInt("u_Cubemap", 0);
+    Shader->setMat4("uVP", SkyVP.Data());
+
+    static uint32_t dummyVAO = 0;
+    if (dummyVAO == 0) dummyVAO = rhi->createVertexArray();
+    rhi->bindVertexArray(dummyVAO);
+    rhi->drawArrays(RHIPrimitive::Triangles, 3, 0);
+    rhi->bindVertexArray(0);
 
     rhi->setDepthMask(true);
 }

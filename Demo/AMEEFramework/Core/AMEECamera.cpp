@@ -1,5 +1,6 @@
 #include "AMEECamera.hpp"
 #include "Entity/AMEEEntity.hpp"
+#include "Platform/IAMEEPlatformGLContext.hpp"
 #include <cmath>
 
 namespace AMEE {
@@ -27,15 +28,25 @@ void Camera::Rotate(float YawDelta, float PitchDelta)
     if (m_Pitch < -89.0f) m_Pitch = -89.0f;
 }
 
+void Camera::UpdateAspect(IPlatformGLContext* ctx)
+{
+    if (!ctx) return;
+    int w, h;
+    ctx->getSize(w, h);
+    if (h > 0) {
+        m_Aspect = (float)w / (float)h;
+    }
+}
+
 Mat4 Camera::GetViewMatrix() const
 {
     Vec3 Pos = GetOwner() ? GetOwner()->GetPosition() : Vec3(0);
     return Mat4::LookAt(Pos, Pos + GetForward(), Vec3(0, 1, 0));
 }
 
-Mat4 Camera::GetProjectionMatrix(float Aspect) const
+Mat4 Camera::GetProjectionMatrix() const
 {
-    return Mat4::Perspective(m_FovDeg, Aspect, m_Near, m_Far);
+    return Mat4::Perspective(m_FovDeg, m_Aspect, m_Near, m_Far);
 }
 
 Vec3 Camera::GetForward() const

@@ -35,6 +35,16 @@ public:
     Texture2D* GetTexture(TextureHandle Handle) const;
     void UnloadTexture(TextureHandle Handle);
 
+    // Cubemap
+    CubemapHandle LoadCubemap(RHI* rhi, const std::string& Dir,
+                              const std::string& PosX = "px.png", const std::string& NegX = "nx.png",
+                              const std::string& PosY = "py.png", const std::string& NegY = "ny.png",
+                              const std::string& PosZ = "pz.png", const std::string& NegZ = "nz.png");
+    CubemapHandle LoadCubemapCross(RHI* rhi, const std::string& FilePath);
+    CubemapHandle RegisterCubemap(uint32_t GLID, const std::string& Name, uint64_t ID = ID_NULL, bool IsBuiltIn = false);
+    uint32_t GetCubemap(CubemapHandle Handle) const;
+    void UnloadCubemap(CubemapHandle Handle);
+
     // Shader
     ShaderHandle LoadShader(RHI* rhi, const std::string& VsPath, const std::string& FsPath, const std::string& Name = "", uint64_t ID = ID_NULL, bool IsBuiltIn = false);
     ShaderHandle RegisterShader(std::unique_ptr<ShaderProgram> InShader, const std::string& Name, uint64_t ID = ID_NULL, bool IsBuiltIn = false);
@@ -58,6 +68,7 @@ public:
 
     // Stats
     size_t GetTextureCount() const  { return m_Textures.size(); }
+    size_t GetCubemapCount() const  { return m_Cubemaps.size(); }
     size_t GetShaderCount() const   { return m_Shaders.size(); }
     size_t GetMeshCount() const     { return m_Meshes.size(); }
     size_t GetMaterialCount() const { return m_Materials.size(); }
@@ -73,6 +84,12 @@ private:
     struct TextureEntry {
         std::unique_ptr<Texture2D> Resource;
         std::string Path;
+        uint32_t RefCount = 0;
+    };
+
+    struct CubemapEntry {
+        uint32_t GLID = 0;
+        std::string Name;
         uint32_t RefCount = 0;
     };
 
@@ -96,6 +113,7 @@ private:
     };
 
     std::vector<TextureEntry> m_Textures;
+    std::vector<CubemapEntry> m_Cubemaps;
     std::vector<ShaderEntry> m_Shaders;
     std::vector<MeshEntry> m_Meshes;
     std::vector<MaterialEntry> m_Materials;

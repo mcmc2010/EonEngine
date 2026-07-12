@@ -16,6 +16,7 @@ struct ImageData {
 
 // CPU-side image loading (stb_image)
 ImageData LoadImage(const std::string& FilePath);
+void SetImageFlipVertical(bool Flip);
 
 } // namespace AMEE
 #endif // __AMEE_IMAGE_H__

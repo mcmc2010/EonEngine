@@ -11,33 +11,48 @@ class SingletonT
 public:
     SingletonT()
     {
-        assert(!ms_Singleton);
+        assert(ms_Singleton == nullptr);
         ms_Singleton = static_cast<T*>(this);
     }
 
     virtual ~SingletonT()
     {
-        assert(ms_Singleton);
+        assert(ms_Singleton == nullptr);
         ms_Singleton = nullptr;
     }
+    
+
 
     static T& GetSingleton()
     {
-        assert(ms_Singleton);
+        if(ms_Singleton == nullptr)
+        {
+            ms_Singleton = NewInstance();
+        }
         return (*ms_Singleton);
     }
 
     static T* GetSingletonPtr()
     {
+        if(ms_Singleton == nullptr)
+        {
+            ms_Singleton = NewInstance();
+        }
         return ms_Singleton;
     }
 
 protected:
-    inline static T* ms_Singleton = nullptr;
+    static T* NewInstance()
+    {
+        assert(ms_Singleton == nullptr);
+        return (ms_Singleton = new T());
+    }
+    
+    inline static T* ms_Singleton;
 };
 
 // 宏保留用于兼容，但不再需要
-#define AMEE_SINGLETON_IMPL(T)
+#define AMEE_SINGLETON_IMPL(_Ty) template<>  _Ty* SingletonT<_Ty>::ms_Singleton = nullptr;
 
 } // namespace AMEE
 

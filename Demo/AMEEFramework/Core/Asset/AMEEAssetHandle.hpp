@@ -5,31 +5,43 @@
 
 namespace AMEE {
 
-template<typename Tag>
+//
+enum class AssetType : uint32_t {
+    None    = 0x0000,
+    Texture = 0x0100,
+    Cubemap = 0x0102,
+    Shader  = 0x0200,
+    Mesh    = 0x0300,
+    Material= 0x0400,
+};
+
 struct AssetHandle {
     uint32_t Index = UINT32_MAX;
     uint64_t ID = ID_NULL;
+    AssetType Type = AssetType::Texture;
     bool IsBuiltIn = false;
     
     bool IsValid() const { return Index != UINT32_MAX; }
     
-    bool operator==(const AssetHandle& O) const { return Index == O.Index; }
-    bool operator!=(const AssetHandle& O) const { return Index != O.Index; }
+    // Cubemap 是 Texture 的子类型
+    bool IsTexture() const { return Type == AssetType::Texture || Type == AssetType::Cubemap; }
+    bool IsCubemap() const { return Type == AssetType::Cubemap; }
     
-    static AssetHandle Make(uint32_t InIndex, uint64_t InID = ID_NULL, bool InIsBuiltIn = false) {
-        return {InIndex, InID, InIsBuiltIn};
+    bool operator==(const AssetHandle& O) const { return Index == O.Index && Type == O.Type; }
+    bool operator!=(const AssetHandle& O) const { return !(*this == O); }
+    
+    static AssetHandle Make(uint32_t InIndex, AssetType InType = AssetType::None,
+                            uint64_t InID = ID_NULL, bool InIsBuiltIn = false) {
+        return {InIndex, InID, InType, InIsBuiltIn};
     }
 };
 
-struct TextureTag {};
-struct ShaderTag {};
-struct MeshTag {};
-struct MaterialTag {};
-
-using TextureHandle = AssetHandle<TextureTag>;
-using ShaderHandle = AssetHandle<ShaderTag>;
-using MeshHandle = AssetHandle<MeshTag>;
-using MaterialHandle = AssetHandle<MaterialTag>;
+// 类型别名（语义区分）
+using TextureHandle = AssetHandle;
+using CubemapHandle = AssetHandle;
+using ShaderHandle = AssetHandle;
+using MeshHandle = AssetHandle;
+using MaterialHandle = AssetHandle;
 
 } // namespace AMEE
 

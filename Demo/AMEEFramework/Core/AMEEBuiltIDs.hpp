@@ -25,6 +25,7 @@ enum class BuiltID : uint64_t {
     // Materials (0x7...03xxxxxx)
     Material_Default = ID_BUILT_BASE + 0x03000001,
     Material_Missing = ID_BUILT_BASE + 0x03000002,
+    Material_Skybox  = ID_BUILT_BASE + 0x03000010,
 };
 
 } // namespace AMEE

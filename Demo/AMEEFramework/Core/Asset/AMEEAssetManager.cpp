@@ -3,12 +3,14 @@
 #include "../Log/AMEELog.hpp"
 #include "../../Render/AMEERHI.hpp"
 #include "../../Render/Texture/AMEETexture2D.hpp"
+#include "../../Render/Texture/AMEEImage.hpp"
 #include "../../Render/Shader/AMEEShaderProgram.hpp"
 #include "../../Render/AMEEMesh.hpp"
 #include "../../Render/Model/AMEEObjLoader.hpp"
 #include "../../Render/Material/AMEEMaterial.hpp"
 #include "../../Render/Material/AMEEStandardMaterial.hpp"
 #include "../../Render/Material/AMEEStandardMaterialImporter.hpp"
+
 
 namespace AMEE {
 
@@ -145,6 +147,16 @@ void AssetManager::InitBuiltinMaterials(RHI* rhi)
         m_BuiltinMaterials[id] = h;
     }
 
+    // Skybox material (uses skybox shader, cubemap will be set at runtime)
+    {
+        auto mat = std::make_unique<Material>();
+        mat->SetName("_Builtin_Skybox");
+        mat->SetShader(GetBuiltinShader(BuiltID::Shader_Skybox));
+        uint64_t id = static_cast<uint64_t>(BuiltID::Material_Skybox);
+        MaterialHandle h = RegisterMaterial(std::move(mat), id, true);
+        m_BuiltinMaterials[id] = h;
+    }
+
     AMEE_LOG_INFO("AssetManager", "Built-in materials: %zu", m_BuiltinMaterials.size());
 }
 
@@ -200,7 +212,7 @@ TextureHandle AssetManager::RegisterTexture(std::unique_ptr<Texture2D> InTex, co
     uint32_t Idx = static_cast<uint32_t>(m_Textures.size());
     m_Textures.push_back({std::move(InTex), Name, 1});
     AMEE_LOG_INFO("AssetManager", "Registered texture [%u]: %s", Idx, Name.c_str());
-    return TextureHandle::Make(Idx, ID, IsBuiltIn);
+    return TextureHandle::Make(Idx, AssetType::Texture, ID, IsBuiltIn);
 }
 
 Texture2D* AssetManager::GetTexture(TextureHandle Handle) const
@@ -222,24 +234,201 @@ void AssetManager::UnloadTexture(TextureHandle Handle)
     }
 }
 
+// ─── Cubemap ─────────────────────────────────────────────────────────────────
+
+CubemapHandle AssetManager::LoadCubemap(RHI* rhi, const std::string& Dir,
+                                         const std::string& PosX, const std::string& NegX,
+                                         const std::string& PosY, const std::string& NegY,
+                                         const std::string& PosZ, const std::string& NegZ)
+{
+    if (!rhi) return {};
+
+    std::string Base = Dir;
+    if (!Base.empty() && Base.back() != '/') Base += '/';
+
+    std::string Paths[6] = { Base + PosX, Base + NegX, Base + PosY, Base + NegY, Base + PosZ, Base + NegZ };
+    const unsigned char* FaceData[6] = {};
+    std::vector<ImageData> Images(6);
+    int FaceW = 0, FaceH = 0;
+
+    for (int i = 0; i < 6; i++) {
+        std::string ResolvedPath = FileSystem::GetSingleton().ResolvePath(Paths[i]);
+        SetImageFlipVertical(false);
+        Images[i] = LoadImage(ResolvedPath.empty() ? Paths[i] : ResolvedPath);
+        SetImageFlipVertical(true);
+        if (Images[i].Pixels.empty()) {
+            AMEE_LOG_ERROR("AssetManager", "Failed to load cubemap face: %s", Paths[i].c_str());
+            return {};
+        }
+        FaceW = Images[i].Width;
+        FaceH = Images[i].Height;
+        FaceData[i] = Images[i].Pixels.data();
+    }
+
+    uint32_t glID = rhi->createCubemap(FaceData, FaceW, FaceH, RHIFormat::RGBA8, RHIFormat::RGBA8);
+    if (glID == 0) {
+        AMEE_LOG_ERROR("AssetManager", "Failed to create cubemap from %s", Dir.c_str());
+        return {};
+    }
+
+    CubemapHandle Handle = RegisterCubemap(glID, Dir);
+    AMEE_LOG_INFO("AssetManager", "Loaded cubemap [%u] from %s (%dx%d)", Handle.Index, Dir.c_str(), FaceW, FaceH);
+    return Handle;
+}
+
+CubemapHandle AssetManager::LoadCubemapCross(RHI* rhi, const std::string& FilePath)
+{
+    if (!rhi) return {};
+
+    std::string ResolvedPath = FileSystem::GetSingleton().ResolvePath(FilePath);
+    SetImageFlipVertical(false);
+    ImageData img = LoadImage(ResolvedPath.empty() ? FilePath : ResolvedPath);
+    SetImageFlipVertical(true);
+    if (img.Pixels.empty()) {
+        AMEE_LOG_ERROR("AssetManager", "Failed to load cubemap cross: %s", FilePath.c_str());
+        return {};
+    }
+
+    // Detect layout: horizontal cross (4:3) or vertical cross (3:4)
+    bool isHorizontal = (img.Width * 3 == img.Height * 4);
+    bool isVertical = (img.Width * 4 == img.Height * 3);
+
+    if (!isHorizontal && !isVertical) {
+        AMEE_LOG_ERROR("AssetManager", "Invalid cubemap cross aspect ratio (%dx%d), expected 4:3 or 3:4",
+                       img.Width, img.Height);
+        return {};
+    }
+
+    int faceW, faceH;
+    // Face offsets for horizontal cross layout:
+    //       [PY]
+    // [NX] [PZ] [PX] [NZ]
+    //       [NY]
+    int offsets[6][2]; // [face][x, y]
+
+    if (isHorizontal) {
+        faceW = img.Width / 4;
+        faceH = img.Height / 3;
+        // +X: col 2, row 1
+        offsets[0][0] = 2 * faceW; offsets[0][1] = 1 * faceH;
+        // -X: col 0, row 1
+        offsets[1][0] = 0;         offsets[1][1] = 1 * faceH;
+        // +Y: col 1, row 0
+        offsets[2][0] = 1 * faceW; offsets[2][1] = 0;
+        // -Y: col 1, row 2
+        offsets[3][0] = 1 * faceW; offsets[3][1] = 2 * faceH;
+        // +Z: col 1, row 1
+        offsets[4][0] = 1 * faceW; offsets[4][1] = 1 * faceH;
+        // -Z: col 3, row 1
+        offsets[5][0] = 3 * faceW; offsets[5][1] = 1 * faceH;
+    } else {
+        // Vertical cross layout:
+        // [PY]
+        // [PX]
+        // [PZ]
+        // [NY]
+        faceW = img.Width / 3;
+        faceH = img.Height / 4;
+        offsets[0][0] = 2 * faceW; offsets[0][1] = 1 * faceH; // +X
+        offsets[1][0] = 0;         offsets[1][1] = 1 * faceH; // -X
+        offsets[2][0] = 1 * faceW; offsets[2][1] = 0;         // +Y
+        offsets[3][0] = 1 * faceW; offsets[3][1] = 2 * faceH; // -Y
+        offsets[4][0] = 1 * faceW; offsets[4][1] = 1 * faceH; // +Z
+        offsets[5][0] = 1 * faceW; offsets[5][1] = 3 * faceH; // -Z
+    }
+
+    // Cut 6 faces from the cross image (skip 1-pixel border to avoid seams)
+    int border = 1; // Skip 1 pixel at each edge
+    int innerW = faceW - 2 * border;
+    int innerH = faceH - 2 * border;
+
+    std::vector<uint8_t> faceBuffers[6];
+    const unsigned char* faceData[6];
+    int bpp = 4; // RGBA
+
+    for (int f = 0; f < 6; f++) {
+        faceBuffers[f].resize(innerW * innerH * bpp);
+        int ox = offsets[f][0] + border;
+        int oy = offsets[f][1] + border;
+
+        for (int y = 0; y < innerH; y++) {
+            int srcRow = oy + y;
+            int srcCol = ox;
+            int srcOffset = (srcRow * img.Width + srcCol) * bpp;
+            int dstOffset = y * innerW * bpp;
+            std::memcpy(faceBuffers[f].data() + dstOffset,
+                       img.Pixels.data() + srcOffset,
+                       innerW * bpp);
+        }
+        faceData[f] = faceBuffers[f].data();
+    }
+
+    uint32_t glID = rhi->createCubemap(faceData, innerW, innerH, RHIFormat::RGBA8, RHIFormat::RGBA8);
+    if (glID == 0) {
+        AMEE_LOG_ERROR("AssetManager", "Failed to create cubemap from cross image");
+        return {};
+    }
+
+    CubemapHandle Handle = RegisterCubemap(glID, FilePath);
+    AMEE_LOG_INFO("AssetManager", "Loaded cubemap cross [%u] from %s (%dx%d, each face %dx%d, border skipped %dpx)",
+                  Handle.Index, FilePath.c_str(), img.Width, img.Height, innerW, innerH, border);
+    return Handle;
+}
+
+CubemapHandle AssetManager::RegisterCubemap(uint32_t GLID, const std::string& Name, uint64_t ID, bool IsBuiltIn)
+{
+    if (GLID == 0) return {};
+    uint32_t Idx = static_cast<uint32_t>(m_Cubemaps.size());
+    m_Cubemaps.push_back({GLID, Name, 1});
+    AMEE_LOG_INFO("AssetManager", "Registered cubemap [%u]: %s", Idx, Name.c_str());
+    return CubemapHandle::Make(Idx, AssetType::Cubemap, ID, IsBuiltIn);
+}
+
+uint32_t AssetManager::GetCubemap(CubemapHandle Handle) const
+{
+    if (!Handle.IsValid() || Handle.Index >= m_Cubemaps.size()) return 0;
+    return m_Cubemaps[Handle.Index].GLID;
+}
+
+void AssetManager::UnloadCubemap(CubemapHandle Handle)
+{
+    if (!Handle.IsValid() || Handle.Index >= m_Cubemaps.size()) return;
+    auto& Entry = m_Cubemaps[Handle.Index];
+    if (Entry.RefCount == 0) return;
+    Entry.RefCount--;
+    if (Entry.RefCount == 0) {
+        AMEE_LOG_INFO("AssetManager", "Unloaded cubemap [%u]: %s", Handle.Index, Entry.Name.c_str());
+        Entry.GLID = 0;
+    }
+}
+
 // ─── Shader ────────────────────────────────────────────────────────────────────
 
 ShaderHandle AssetManager::LoadShader(RHI* rhi, const std::string& VsPath, const std::string& FsPath, const std::string& Name, uint64_t ID, bool IsBuiltIn)
 {
     if (!rhi) return {};
 
+    // Ensure built-in resources have Assets/ prefix
+    auto EnsureAssetsPrefix = [](const std::string& Path) -> std::string {
+        if (Path.find("Assets/") == 0) return Path;
+        return "Assets/" + Path;
+    };
+
+    std::string ActualVsPath = IsBuiltIn ? EnsureAssetsPrefix(VsPath) : VsPath;
+    std::string ActualFsPath = IsBuiltIn ? EnsureAssetsPrefix(FsPath) : FsPath;
+
     for (size_t i = 0; i < m_Shaders.size(); ++i) {
-        if (m_Shaders[i].VsPath == VsPath && m_Shaders[i].FsPath == FsPath && m_Shaders[i].Resource) {
+        if (m_Shaders[i].VsPath == ActualVsPath && m_Shaders[i].FsPath == ActualFsPath && m_Shaders[i].Resource) {
             m_Shaders[i].RefCount++;
-            return ShaderHandle::Make(static_cast<uint32_t>(i));
+            return ShaderHandle::Make(static_cast<uint32_t>(i), AssetType::Shader);
         }
     }
 
-    std::string VsSource = FileSystem::GetSingleton().ReadText(VsPath);
-    std::string FsSource = FileSystem::GetSingleton().ReadText(FsPath);
+    std::string VsSource = FileSystem::GetSingleton().ReadText(ActualVsPath);
+    std::string FsSource = FileSystem::GetSingleton().ReadText(ActualFsPath);
     if (VsSource.empty() || FsSource.empty()) {
         AMEE_LOG_ERROR("AssetManager", "Failed to read shader sources: %s / %s",
-                       VsPath.c_str(), FsPath.c_str());
+                       ActualVsPath.c_str(), ActualFsPath.c_str());
         return {};
     }
 
@@ -267,7 +456,7 @@ ShaderHandle AssetManager::LoadShader(RHI* rhi, const std::string& VsPath, const
         return {};
     }
 
-    std::string RegisterName = Name.empty() ? (VsPath + " + " + FsPath) : Name;
+    std::string RegisterName = Name.empty() ? (ActualVsPath + " + " + ActualFsPath) : Name;
     return RegisterShader(std::move(Shader), RegisterName, ID, IsBuiltIn);
 }
 
@@ -277,7 +466,7 @@ ShaderHandle AssetManager::RegisterShader(std::unique_ptr<ShaderProgram> InShade
     uint32_t Idx = static_cast<uint32_t>(m_Shaders.size());
     m_Shaders.push_back({std::move(InShader), Name, "", 1});
     AMEE_LOG_INFO("AssetManager", "Registered shader [%u]: %s", Idx, Name.c_str());
-    return ShaderHandle::Make(Idx, ID, IsBuiltIn);
+    return ShaderHandle::Make(Idx, AssetType::Shader, ID, IsBuiltIn);
 }
 
 ShaderProgram* AssetManager::GetShader(ShaderHandle Handle) const
@@ -307,7 +496,7 @@ MeshHandle AssetManager::RegisterMesh(std::unique_ptr<Mesh> InMesh, const std::s
     uint32_t Idx = static_cast<uint32_t>(m_Meshes.size());
     m_Meshes.push_back({std::move(InMesh), Name, 1});
     AMEE_LOG_INFO("AssetManager", "Registered mesh [%u]: %s", Idx, Name.c_str());
-    return MeshHandle::Make(Idx, ID, IsBuiltIn);
+    return MeshHandle::Make(Idx, AssetType::Mesh, ID, IsBuiltIn);
 }
 
 MeshHandle AssetManager::LoadModel(RHI* rhi, const std::string& LogicalPath,
@@ -403,7 +592,7 @@ MaterialHandle AssetManager::RegisterMaterial(std::unique_ptr<Material> InMat, u
     uint32_t Idx = static_cast<uint32_t>(m_Materials.size());
     m_Materials.push_back({std::move(InMat), "", 1});
     AMEE_LOG_INFO("AssetManager", "Registered material [%u]: %s", Idx, m_Materials.back().Resource->GetName().c_str());
-    return MaterialHandle::Make(Idx, ID, IsBuiltIn);
+    return MaterialHandle::Make(Idx, AssetType::Material, ID, IsBuiltIn);
 }
 
 Material* AssetManager::GetMaterial(MaterialHandle Handle) const
@@ -429,6 +618,7 @@ void AssetManager::UnloadMaterial(MaterialHandle Handle)
 void AssetManager::UnloadAll()
 {
     m_Textures.clear();
+    m_Cubemaps.clear();
     m_Shaders.clear();
     m_Meshes.clear();
     m_Materials.clear();

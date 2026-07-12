@@ -2,6 +2,7 @@
 #include "Log/AMEELog.hpp"
 #include "Asset/AMEEFileSystem.hpp"
 #include "Asset/AMEEAssetManager.hpp"
+#include "../Render/Texture/AMEEImage.hpp"
 #include "../Render/Material/AMEEBuiltinMaterials.hpp"
 
 namespace AMEE {
@@ -45,6 +46,9 @@ bool Application::Init(const ApplicationConfig& config)
         AMEE_LOG_ERROR("Application", "Failed to create RHI");
         return false;
     }
+
+    // Default image flip for 2D textures
+    SetImageFlipVertical(true);
 
     // Initialize built-in resources (textures, shaders, materials)
     AssetManager::GetSingleton().InitializeBuiltins(m_pRHI.get());
