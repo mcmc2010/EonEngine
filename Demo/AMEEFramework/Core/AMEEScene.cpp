@@ -1,8 +1,9 @@
 #include "AMEEScene.hpp"
-#include "AMEECamera.hpp"
 #include "Entity/AMEEEntity.hpp"
 #include "Components/AMEELight.hpp"
 #include "Components/AMEEMeshFilter.hpp"
+#include "Components/AMEEMeshRenderer.hpp"
+#include "AMEECamera.hpp"
 #include "../Render/Shader/AMEEShaderProgram.hpp"
 #include "../Render/AMEEMesh.hpp"
 #include "../Render/AMEERHI.hpp"
@@ -71,8 +72,7 @@ void Scene::DrawSkybox(RHI* rhi, Camera* pCamera)
     RotView.at(3, 1) = 0;
     RotView.at(3, 2) = 0;
 
-    //Mat4 Proj = pCamera->GetProjectionMatrix();
-    Mat4 Proj = Mat4::Perspective(90.0f, pCamera->GetAspect(), 0.1f, 1000.0f);
+    Mat4 Proj = pCamera->GetProjectionMatrix();
     Mat4 VP = Proj * RotView;
     Mat4 InvVP = VP.InverseTransform();
 
@@ -144,6 +144,27 @@ void Scene::Update(float DeltaTime)
             }
         }
     }
+}
+
+void Scene::Render(RHI* rhi, const Mat4& ViewProj)
+{
+    // Iterate scene and render all MeshRenderers recursively
+    std::function<void(const std::vector<std::unique_ptr<Node>>&)> RenderNodes =
+        [&](const std::vector<std::unique_ptr<Node>>& Children) {
+            for (auto& Child : Children) {
+                if (!Child || !Child->IsActive()) continue;
+
+                if (auto* Ent = dynamic_cast<Entity*>(Child.get())) {
+                    if (auto* Renderer = Ent->GetComponent<MeshRenderer>()) {
+                        if (Renderer->IsVisible()) {
+                            Renderer->Draw(rhi, ViewProj);
+                        }
+                    }
+                }
+                RenderNodes(Child->GetChildren());
+            }
+        };
+    RenderNodes(this->GetChildren());
 }
 
 } // namespace AMEE

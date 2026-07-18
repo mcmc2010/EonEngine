@@ -15,10 +15,18 @@ public:
     MeshRenderer() = default;
 
     std::vector<MaterialHandle> m_Materials;
-    bool m_Visible = true;
 
+
+
+    
+    //
     void SetMaterial(MaterialHandle H) { m_Materials = {H}; }
     void Draw(RHI* rhi, const Mat4& ViewProj);
+    
+protected:
+    //
+    bool m_CastsShadow = true;    // 投射阴影
+    bool m_ReceivesShadow = true; // 接收阴影
 };
 
 } // namespace AMEE

@@ -62,6 +62,21 @@ bool DemoApp::OnInit()
 
     m_pScene->AddChild(std::move(CubeEntity));
 
+    // ─── Sphere Entity (for comparison) ────────────────────────────────────
+
+    auto SphereEnt = std::make_unique<Entity>();
+    SphereEnt->SetName("Sphere");
+    SphereEnt->SetPosition({2, 0.5, 0});
+
+    auto* SphereFilter = SphereEnt->AddComponent<MeshFilter>();
+    Mesh* SphereMesh = PrimitiveMesh::CreateSphere(rhi, 1.0f, 32);
+    SphereFilter->SetMesh(assets.RegisterMesh(std::unique_ptr<Mesh>(SphereMesh), "_Sphere"));
+
+    auto* SphereRenderer = SphereEnt->AddComponent<MeshRenderer>();
+    SphereRenderer->m_Materials.push_back(assets.GetBuiltinMaterial(BuiltID::Material_Default));
+
+    m_pScene->AddChild(std::move(SphereEnt));
+
     // ─── Sun Light ─────────────────────────────────────────────────────────
 
     auto SunEntity = std::make_unique<Entity>();
@@ -182,20 +197,10 @@ void DemoApp::OnRender(double deltaTime, double totalTime, double alpha)
         m_pShader->setMat4("u_MVP", GridMVP.Data());
         m_pGridHelper->Draw(rhi, VP);
     }
+    
+    m_pScene->Render(rhi, VP);
 
-    // Iterate scene and render all MeshRenderers recursively
-    std::function<void(const std::vector<std::unique_ptr<Node>>&)> RenderNodes =
-        [&](const auto& Children) {
-            for (auto& Child : Children) {
-                if (auto* Ent = dynamic_cast<Entity*>(Child.get())) {
-                    if (auto* Renderer = Ent->GetComponent<MeshRenderer>()) {
-                        Renderer->Draw(rhi, VP);
-                    }
-                }
-                RenderNodes(Child->GetChildren());
-            }
-        };
-    RenderNodes(m_pScene->GetChildren());
+
 }
 
 void DemoApp::OnShutdown()

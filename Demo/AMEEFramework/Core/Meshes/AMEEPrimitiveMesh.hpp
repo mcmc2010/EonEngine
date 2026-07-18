@@ -7,12 +7,12 @@ namespace AMEE {
 
 class PrimitiveMesh {
 public:
-    // Each vertex: position(3) + normal(3) + texcoord(2) = 8 floats
-    static constexpr int VERTEX_SIZE = 8;
+    // Each vertex: position(3) + normal(3) + texcoord(2) + tangent(3) = 11 floats
+    static constexpr int VERTEX_SIZE = 11;
 
     // Basic primitives
     static Mesh* CreateCube(RHI* rhi, float Size = 1.0f);
-    static Mesh* CreateSphere(RHI* rhi, float Radius = 1.0f, int Segments = 32);
+    static Mesh* CreateSphere(RHI* rhi, float Diameter = 1.0f, int Segments = 32);
     static Mesh* CreatePlane(RHI* rhi, float Width = 1.0f, float Height = 1.0f);
     static Mesh* CreateCylinder(RHI* rhi, float Radius = 1.0f, float Height = 1.0f, int Segments = 32);
     static Mesh* CreateCapsule(RHI* rhi, float Radius = 0.5f, float Height = 1.0f, int Segments = 32);

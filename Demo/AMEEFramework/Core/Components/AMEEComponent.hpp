@@ -15,14 +15,22 @@ public:
     // Owner
     Entity* GetOwner() const { return m_pOwner; }
     void SetOwner(Entity* pOwner) { m_pOwner = pOwner; }
+    
+    //
+    bool IsVisible() { return m_Visible; }
 
     // Lifecycle
     virtual void OnAttach() {}
     virtual void OnDetach() {}
     virtual void Update(float DeltaTime) { (void)DeltaTime; }
 
+    
+protected:
+    bool m_Visible = true;
+    
 private:
     Entity* m_pOwner = nullptr;
+
 };
 
 } // namespace AMEE

@@ -12,43 +12,43 @@ Mesh* PrimitiveMesh::CreateCube(RHI* rhi, float Size)
 {
     float H = Size * 0.5f;
 
-    // 6 faces * 4 vertices * 8 floats
+    // 6 faces * 4 vertices * 11 floats (pos3 + normal3 + uv2 + tangent3)
     float Vertices[] = {
-        // Front face (z+)
-        -H, -H,  H,   0,  0,  1,   0, 0,
-         H, -H,  H,   0,  0,  1,   1, 0,
-         H,  H,  H,   0,  0,  1,   1, 1,
-        -H,  H,  H,   0,  0,  1,   0, 1,
+        // Front face (z+), tangent = (1,0,0)
+        -H, -H,  H,   0,  0,  1,   0, 0,   1, 0, 0,
+         H, -H,  H,   0,  0,  1,   1, 0,   1, 0, 0,
+         H,  H,  H,   0,  0,  1,   1, 1,   1, 0, 0,
+        -H,  H,  H,   0,  0,  1,   0, 1,   1, 0, 0,
 
-        // Back face (z-)
-         H, -H, -H,   0,  0, -1,   0, 0,
-        -H, -H, -H,   0,  0, -1,   1, 0,
-        -H,  H, -H,   0,  0, -1,   1, 1,
-         H,  H, -H,   0,  0, -1,   0, 1,
+        // Back face (z-), tangent = (-1,0,0)
+         H, -H, -H,   0,  0, -1,   0, 0,  -1, 0, 0,
+        -H, -H, -H,   0,  0, -1,   1, 0,  -1, 0, 0,
+        -H,  H, -H,   0,  0, -1,   1, 1,  -1, 0, 0,
+         H,  H, -H,   0,  0, -1,   0, 1,  -1, 0, 0,
 
-        // Top face (y+)
-        -H,  H,  H,   0,  1,  0,   0, 0,
-         H,  H,  H,   0,  1,  0,   1, 0,
-         H,  H, -H,   0,  1,  0,   1, 1,
-        -H,  H, -H,   0,  1,  0,   0, 1,
+        // Top face (y+), tangent = (1,0,0)
+        -H,  H,  H,   0,  1,  0,   0, 0,   1, 0, 0,
+         H,  H,  H,   0,  1,  0,   1, 0,   1, 0, 0,
+         H,  H, -H,   0,  1,  0,   1, 1,   1, 0, 0,
+        -H,  H, -H,   0,  1,  0,   0, 1,   1, 0, 0,
 
-        // Bottom face (y-)
-        -H, -H, -H,   0, -1,  0,   0, 0,
-         H, -H, -H,   0, -1,  0,   1, 0,
-         H, -H,  H,   0, -1,  0,   1, 1,
-        -H, -H,  H,   0, -1,  0,   0, 1,
+        // Bottom face (y-), tangent = (1,0,0)
+        -H, -H, -H,   0, -1,  0,   0, 0,   1, 0, 0,
+         H, -H, -H,   0, -1,  0,   1, 0,   1, 0, 0,
+         H, -H,  H,   0, -1,  0,   1, 1,   1, 0, 0,
+        -H, -H,  H,   0, -1,  0,   0, 1,   1, 0, 0,
 
-        // Right face (x+)
-         H, -H,  H,   1,  0,  0,   0, 0,
-         H, -H, -H,   1,  0,  0,   1, 0,
-         H,  H, -H,   1,  0,  0,   1, 1,
-         H,  H,  H,   1,  0,  0,   0, 1,
+        // Right face (x+), tangent = (0,0,-1)
+         H, -H,  H,   1,  0,  0,   0, 0,   0, 0,-1,
+         H, -H, -H,   1,  0,  0,   1, 0,   0, 0,-1,
+         H,  H, -H,   1,  0,  0,   1, 1,   0, 0,-1,
+         H,  H,  H,   1,  0,  0,   0, 1,   0, 0,-1,
 
-        // Left face (x-)
-        -H, -H, -H,  -1,  0,  0,   0, 0,
-        -H, -H,  H,  -1,  0,  0,   1, 0,
-        -H,  H,  H,  -1,  0,  0,   1, 1,
-        -H,  H, -H,  -1,  0,  0,   0, 1,
+        // Left face (x-), tangent = (0,0,1)
+        -H, -H, -H,  -1,  0,  0,   0, 0,   0, 0, 1,
+        -H, -H,  H,  -1,  0,  0,   1, 0,   0, 0, 1,
+        -H,  H,  H,  -1,  0,  0,   1, 1,   0, 0, 1,
+        -H,  H, -H,  -1,  0,  0,   0, 1,   0, 0, 1,
     };
 
     uint32_t Indices[] = {
@@ -63,7 +63,8 @@ Mesh* PrimitiveMesh::CreateCube(RHI* rhi, float Size)
     VertexLayout Layout;
     Layout.Add(0, 3, RHIDataType::Float)   // position
           .Add(1, 3, RHIDataType::Float)   // normal
-          .Add(2, 2, RHIDataType::Float);  // texcoord
+          .Add(2, 2, RHIDataType::Float)   // texcoord
+          .Add(3, 3, RHIDataType::Float);  // tangent
 
     Mesh* M = new Mesh();
     if (!M->CreateIndexed(rhi, Vertices, 24, Indices, 36, Layout)) {
@@ -79,11 +80,12 @@ Mesh* PrimitiveMesh::CreateCube(RHI* rhi, float Size)
 // =============================================================================
 // Sphere
 // =============================================================================
-Mesh* PrimitiveMesh::CreateSphere(RHI* rhi, float Radius, int Segments)
+Mesh* PrimitiveMesh::CreateSphere(RHI* rhi, float Diameter, int Segments)
 {
     std::vector<float> Vertices;
     std::vector<uint32_t> Indices;
 
+    float Radius = Diameter * 0.5f;
     GenerateSphereVertices(Vertices, Indices, Radius, Segments);
 
     VertexLayout Layout;
@@ -166,12 +168,13 @@ Mesh* PrimitiveMesh::CreatePlane(RHI* rhi, float Width, float Height)
     float HW = Width * 0.5f;
     float HH = Height * 0.5f;
 
+    // pos3 + normal3 + uv2 + tangent3 = 11 floats
+    // Plane on XZ, normal = (0,1,0), tangent = (1,0,0)
     float Vertices[] = {
-        // position           normal        texcoord
-        -HW, 0, -HH,   0, 1, 0,   0, 0,
-         HW, 0, -HH,   0, 1, 0,   1, 0,
-         HW, 0,  HH,   0, 1, 0,   1, 1,
-        -HW, 0,  HH,   0, 1, 0,   0, 1,
+        -HW, 0, -HH,   0, 1, 0,   0, 0,   1, 0, 0,
+         HW, 0, -HH,   0, 1, 0,   1, 0,   1, 0, 0,
+         HW, 0,  HH,   0, 1, 0,   1, 1,   1, 0, 0,
+        -HW, 0,  HH,   0, 1, 0,   0, 1,   1, 0, 0,
     };
 
     uint32_t Indices[] = {
@@ -182,7 +185,8 @@ Mesh* PrimitiveMesh::CreatePlane(RHI* rhi, float Width, float Height)
     VertexLayout Layout;
     Layout.Add(0, 3, RHIDataType::Float)
           .Add(1, 3, RHIDataType::Float)
-          .Add(2, 2, RHIDataType::Float);
+          .Add(2, 2, RHIDataType::Float)
+          .Add(3, 3, RHIDataType::Float);
 
     Mesh* M = new Mesh();
     if (!M->CreateIndexed(rhi, Vertices, 4, Indices, 6, Layout)) {

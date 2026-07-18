@@ -13,7 +13,6 @@ class Entity;
 class Light;
 class ShaderProgram;
 class RHI;
-
 class Camera;
 
 struct DirectionalLightData {
@@ -27,6 +26,7 @@ public:
     virtual ~Scene() = default;
 
     void Update(float DeltaTime);
+    void Render(RHI* rhi, const Mat4& ViewProj);
 
     // Skybox & Environment
     void SetSkybox(MaterialHandle Handle) { m_Skybox = Handle; }

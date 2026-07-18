@@ -26,9 +26,6 @@ public:
     Vec3 GetScale() const { return m_vScale; }
     void SetScale(const Vec3& S) { m_vScale = S; }
 
-    bool IsVisible() const { return m_Visible; }
-    void SetVisible(bool Visible) { m_Visible = Visible; }
-
     // Matrix
     Mat4 GetLocalMatrix() const;
     Mat4 GetWorldMatrix() const;
@@ -55,7 +52,6 @@ private:
     Vec3 m_vPosition;
     Vec3 m_vRotation = {0, 0, 0};
     Vec3 m_vScale    = {1, 1, 1};
-    bool m_Visible   = true;
 
     std::vector<std::unique_ptr<Component>> m_Components;
 };
