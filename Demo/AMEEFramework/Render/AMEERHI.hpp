@@ -39,11 +39,15 @@ class RHI {
 public:
     virtual ~RHI() = default;
 
+    // Initialization (call once after context creation)
+    virtual void init() = 0;
+
     // Frame
     virtual void setClearColor(float r, float g, float b, float a) = 0;
     virtual void clear() = 0;
     virtual void setViewport(const RHIViewport& vp) = 0;
     virtual void setDepthMask(bool Write) = 0;
+    virtual void setDepthFunc(bool LessEqual) = 0;  // true=LEQUAL, false=LESS
     virtual void present() = 0;
 
     // VBO

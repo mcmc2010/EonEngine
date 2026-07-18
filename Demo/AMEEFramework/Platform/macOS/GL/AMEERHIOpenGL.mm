@@ -8,6 +8,13 @@
 
 namespace AMEE {
 
+// Initialization
+void RHIOpenGL::init()
+{
+    // Enable seamless cubemap sampling (eliminates seam artifacts)
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+}
+
 // Frame
 void RHIOpenGL::setClearColor(float r, float g, float b, float a)
 {
@@ -32,6 +39,11 @@ void RHIOpenGL::setViewport(const RHIViewport& vp)
 void RHIOpenGL::setDepthMask(bool Write)
 {
     glDepthMask(Write ? GL_TRUE : GL_FALSE);
+}
+
+void RHIOpenGL::setDepthFunc(bool LessEqual)
+{
+    glDepthFunc(LessEqual ? GL_LEQUAL : GL_LESS);
 }
 
 void RHIOpenGL::present()

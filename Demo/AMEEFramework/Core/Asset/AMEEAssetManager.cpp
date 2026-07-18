@@ -302,6 +302,7 @@ CubemapHandle AssetManager::LoadCubemapCross(RHI* rhi, const std::string& FilePa
         return {};
     }
 
+    
     int faceW, faceH;
     // Face offsets for horizontal cross layout:
     //       [PY]
@@ -312,6 +313,7 @@ CubemapHandle AssetManager::LoadCubemapCross(RHI* rhi, const std::string& FilePa
     if (isHorizontal) {
         faceW = img.Width / 4;
         faceH = img.Height / 3;
+
         // +X: col 2, row 1
         offsets[0][0] = 2 * faceW; offsets[0][1] = 1 * faceH;
         // -X: col 0, row 1
@@ -332,6 +334,7 @@ CubemapHandle AssetManager::LoadCubemapCross(RHI* rhi, const std::string& FilePa
         // [NY]
         faceW = img.Width / 3;
         faceH = img.Height / 4;
+        
         offsets[0][0] = 2 * faceW; offsets[0][1] = 1 * faceH; // +X
         offsets[1][0] = 0;         offsets[1][1] = 1 * faceH; // -X
         offsets[2][0] = 1 * faceW; offsets[2][1] = 0;         // +Y
@@ -341,10 +344,14 @@ CubemapHandle AssetManager::LoadCubemapCross(RHI* rhi, const std::string& FilePa
     }
 
     // Cut 6 faces from the cross image (skip 1-pixel border to avoid seams)
-    int border = 1; // Skip 1 pixel at each edge
+    int border = 0; // Skip 1 pixel at each edge
     int innerW = faceW - 2 * border;
     int innerH = faceH - 2 * border;
-
+    //
+    AMEE_LOG_INFO("AssetManager", "Load cubemap (%dx%d), clip(%d %d), is vertical %s",
+                   img.Width, img.Height, faceW, faceH,
+                  (isVertical ? "True" : "False"));
+    
     std::vector<uint8_t> faceBuffers[6];
     const unsigned char* faceData[6];
     int bpp = 4; // RGBA

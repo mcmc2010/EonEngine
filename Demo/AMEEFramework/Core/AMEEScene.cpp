@@ -64,19 +64,27 @@ void Scene::DrawSkybox(RHI* rhi, Camera* pCamera)
     ShaderProgram* Shader = Assets.GetShader(Mat->GetShader());
     if (!Mat || !Shader) return;
 
+    // Rotation-only view matrix (remove translation)
     Mat4 View = pCamera->GetViewMatrix();
-    Mat4 Proj = pCamera->GetProjectionMatrix();
+    Mat4 RotView = View;
+    RotView.at(3, 0) = 0;
+    RotView.at(3, 1) = 0;
+    RotView.at(3, 2) = 0;
 
-    rhi->setDepthMask(false);
+    //Mat4 Proj = pCamera->GetProjectionMatrix();
+    Mat4 Proj = Mat4::Perspective(90.0f, pCamera->GetAspect(), 0.1f, 1000.0f);
+    Mat4 VP = Proj * RotView;
+    Mat4 InvVP = VP.InverseTransform();
 
-    Mat4 SkyVP = Proj * View;
-    SkyVP.at(3, 0) = SkyVP.at(3, 1) = SkyVP.at(3, 2) = 0;
+    // Skybox render state
+    rhi->setDepthMask(false);       // Disable depth writing
+    rhi->setDepthFunc(true);        // Set depth func to LEQUAL (z=1.0 passes)
 
     Shader->use();
     uint32_t cubemapGLID = Assets.GetCubemap(m_SkyboxCubemap);
     rhi->bindCubemap(cubemapGLID, 0);
     Shader->setInt("u_Cubemap", 0);
-    Shader->setMat4("uVP", SkyVP.Data());
+    Shader->setMat4("u_InverseVP", InvVP.Data());
 
     static uint32_t dummyVAO = 0;
     if (dummyVAO == 0) dummyVAO = rhi->createVertexArray();
@@ -84,7 +92,9 @@ void Scene::DrawSkybox(RHI* rhi, Camera* pCamera)
     rhi->drawArrays(RHIPrimitive::Triangles, 3, 0);
     rhi->bindVertexArray(0);
 
-    rhi->setDepthMask(true);
+    // Restore render state
+    rhi->setDepthMask(true);        // Re-enable depth writing
+    rhi->setDepthFunc(false);       // Restore depth func to LESS
 }
 
 void Scene::CollectLights()

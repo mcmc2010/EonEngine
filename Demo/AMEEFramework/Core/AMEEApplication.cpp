@@ -25,16 +25,16 @@ bool Application::Init(const ApplicationConfig& config)
     m_pWindow->center();
 
     // Create GL context BEFORE showing window
-    m_pGLContext = CreatePlatformGLContext();
-    if (!m_pGLContext) {
+    m_pContext = CreatePlatformContext();
+    if (!m_pContext) {
         AMEE_LOG_ERROR("Application", "Failed to create platform GL context");
         return false;
     }
-    if (!m_pGLContext->create(m_pWindow->getNativeHandle())) {
+    if (!m_pContext->create(m_pWindow->getNativeHandle())) {
         AMEE_LOG_ERROR("Application", "Failed to create GL context");
         return false;
     }
-    m_pGLContext->makeCurrent();
+    m_pContext->makeCurrent();
 
     // Show window AFTER GL context is set up
     m_pWindow->show();
@@ -45,6 +45,9 @@ bool Application::Init(const ApplicationConfig& config)
         AMEE_LOG_ERROR("Application", "Failed to create RHI");
         return false;
     }
+
+    // Initialize RHI (enable seamless cubemap, etc.)
+    m_pRHI->init();
 
     // Default image flip for 2D textures
     SetImageFlipVertical(true);
@@ -82,13 +85,13 @@ void Application::Shutdown()
     OnShutdown();
 
     m_pGameLoop->stop();
-    m_pGLContext->makeCurrent();
+    m_pContext->makeCurrent();
 
     AssetManager::GetSingleton().UnloadAll();
 
     m_pInput.reset();
     m_pRHI.reset();
-    m_pGLContext.reset();
+    m_pContext.reset();
     m_pWindow.reset();
 
     AMEE_LOG_INFO("Application", "Shutdown complete");
@@ -102,15 +105,15 @@ void Application::Run()
         [this](double dt, double totalTime, double alpha) {
             m_pInput->Update();
 
-            m_pGLContext->makeCurrent();
+            m_pContext->makeCurrent();
 
             int w, h;
-            m_pGLContext->getSize(w, h);
+            m_pContext->getSize(w, h);
             m_pRHI->setViewport({0.0f, 0.0f, (float)w, (float)h});
 
             OnRender(dt, totalTime, alpha);
 
-            m_pGLContext->swapBuffers();
+            m_pContext->swapBuffers();
 
             if (!m_pWindow->pollEvents()) {
                 m_Running = false;

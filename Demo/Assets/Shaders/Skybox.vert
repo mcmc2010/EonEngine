@@ -1,5 +1,5 @@
 #version 410 core
-uniform mat4 uVP;
+uniform mat4 u_InverseVP;
 out vec3 vTexCoord;
 
 void main() {
@@ -11,10 +11,9 @@ void main() {
     );
 
     vec2 pos = positions[gl_VertexID];
-    gl_Position = vec4(pos, 1.0, 1.0);
+    gl_Position = vec4(pos, 1.0, 1.0); // z=1.0 far plane
 
-    // Reconstruct cubemap direction
-    mat4 invVP = inverse(uVP);
-    vec4 worldPos = invVP * vec4(pos, 1.0, 1.0);
-    vTexCoord = worldPos.xyz / worldPos.w;
+    // Reconstruct cubemap direction using inverse VP (no translation)
+    vec4 worldPos = u_InverseVP * vec4(pos, 1.0, 1.0);
+    vTexCoord = worldPos.xyz; // No need to divide by w (far plane)
 }

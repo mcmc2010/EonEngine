@@ -3,7 +3,7 @@
 #import <OpenGL/gl.h>
 #import <OpenGL/OpenGL.h>
 #import "../../Core/Log/AMEELog.hpp"
-#include "../../Core/Platform/IAMEEPlatformGLContext.hpp"
+#include "../../Core/Platform/IAMEEPlatformContext.hpp"
 
 @interface MacGLView : NSOpenGLView
 @end

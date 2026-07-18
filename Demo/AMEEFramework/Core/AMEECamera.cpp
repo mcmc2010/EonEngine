@@ -1,6 +1,6 @@
 #include "AMEECamera.hpp"
 #include "Entity/AMEEEntity.hpp"
-#include "Platform/IAMEEPlatformGLContext.hpp"
+#include "Platform/IAMEEPlatformContext.hpp"
 #include <cmath>
 
 namespace AMEE {
@@ -28,7 +28,7 @@ void Camera::Rotate(float YawDelta, float PitchDelta)
     if (m_Pitch < -89.0f) m_Pitch = -89.0f;
 }
 
-void Camera::UpdateAspect(IPlatformGLContext* ctx)
+void Camera::UpdateAspect(IPlatformContext* ctx)
 {
     if (!ctx) return;
     int w, h;

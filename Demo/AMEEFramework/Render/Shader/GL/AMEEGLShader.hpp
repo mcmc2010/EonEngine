@@ -32,6 +32,7 @@ public:
     void setFloat3(const std::string& name, float x, float y, float z) override;
     void setFloat4(const std::string& name, float x, float y, float z, float w) override;
     void setInt   (const std::string& name, int v) override;
+    void setMat3  (const std::string& name, const float* data) override;
     void setMat4  (const std::string& name, const float* data) override;
 
     std::vector<UniformDesc> getUniforms() const override;

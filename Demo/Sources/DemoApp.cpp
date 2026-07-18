@@ -31,7 +31,7 @@ bool DemoApp::OnInit()
 
     // ─── Skybox ────────────────────────────────────────────────────────────
 
-    m_pScene->LoadSkybox(rhi, "Assets/Skybox/");
+    m_pScene->LoadSkybox(rhi, "Assets/Skybox/1.png");
 
     // ─── Model Entity (loaded from OBJ + MTL) ──────────────────────────────
 
@@ -104,7 +104,7 @@ bool DemoApp::OnInit()
 
     m_pCamera = CameraEntity->AddComponent<Camera>(60.0f, 0.1f, 1000.0f);
     m_pCamera->SetRotation(-90.0f, 0);
-    m_pCamera->UpdateAspect(GetGLContext());
+    m_pCamera->UpdateAspect(GetContext());
     m_pCameraEntity = CameraEntity.get();
 
     m_pScene->AddChild(std::move(CameraEntity));
@@ -162,7 +162,7 @@ void DemoApp::OnRender(double deltaTime, double totalTime, double alpha)
     rhi->clear();
 
     // Update camera aspect ratio (in case window resized)
-    m_pCamera->UpdateAspect(GetGLContext());
+    m_pCamera->UpdateAspect(GetContext());
 
     Mat4 View = m_pCamera->GetViewMatrix();
     Mat4 Proj = m_pCamera->GetProjectionMatrix();
@@ -179,7 +179,7 @@ void DemoApp::OnRender(double deltaTime, double totalTime, double alpha)
     if (m_pGridHelper && m_pShader) {
         Mat4 GridMVP = VP;
         m_pShader->use();
-        m_pShader->setMat4("uMVP", GridMVP.Data());
+        m_pShader->setMat4("u_MVP", GridMVP.Data());
         m_pGridHelper->Draw(rhi, VP);
     }
 

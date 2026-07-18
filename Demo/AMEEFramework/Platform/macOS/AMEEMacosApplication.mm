@@ -15,7 +15,7 @@ std::unique_ptr<IPlatformWindow> MacosApplication::CreatePlatformWindow()
     return std::make_unique<MacosWindow>();
 }
 
-std::unique_ptr<IPlatformGLContext> MacosApplication::CreatePlatformGLContext()
+std::unique_ptr<IPlatformContext> MacosApplication::CreatePlatformContext()
 {
     return std::make_unique<MacosGLContext>();
 }

@@ -1,4 +1,6 @@
 #include "AMEEStandardMaterial.hpp"
+#include "../../Core/Asset/AMEEAssetManager.hpp"
+#include "../../Core/AMEEBuiltIDs.hpp"
 
 namespace AMEE {
 
@@ -22,7 +24,7 @@ void StandardMaterial::SetAlbedoColor(const Vec4& Color)
 
 void StandardMaterial::SetNormalMap(TextureHandle Handle)
 {
-    SetTexture(BumpMap, Handle);
+    SetTexture(NormalMap, Handle);
 }
 
 void StandardMaterial::SetMetallic(float Value)
@@ -47,6 +49,15 @@ void StandardMaterial::SetSpecularExponent(float Exp)
 
 void StandardMaterial::Apply(RHI* rhi)
 {
+    auto& Assets = AssetManager::GetSingleton();
+
+    // Fallback: if no normal map set, use built-in flat normal
+    TextureHandle NormalMapTex = GetTexture(NormalMap);
+    if (!NormalMapTex.IsValid()) {
+        NormalMapTex = Assets.GetBuiltinTexture(BuiltID::Texture_Normal);
+        SetTexture(NormalMap, NormalMapTex);
+    }
+
     Material::Apply(rhi);
 }
 

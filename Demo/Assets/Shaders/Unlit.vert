@@ -1,9 +1,9 @@
 #version 410 core
-layout(location = 0) in vec3 aPos;
-layout(location = 2) in vec2 aTexCoord;
-uniform mat4 uMVP;
-out vec2 vTexCoord;
+layout(location = 0) in vec3 a_Pos;
+layout(location = 2) in vec2 a_TexCoord;
+uniform mat4 u_MVP;
+out vec2 v_TexCoord;
 void main() {
-    gl_Position = uMVP * vec4(aPos, 1.0);
-    vTexCoord = aTexCoord;
+    gl_Position = u_MVP * vec4(a_Pos, 1.0);
+    v_TexCoord = a_TexCoord;
 }

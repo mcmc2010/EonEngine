@@ -207,3 +207,72 @@ namespace AMEE::Game {
 - 禁止全局变量暴露在头文件中（头文件禁止定义非 `inline` 的非 `const` 变量）
 - 禁止使用裸 `int`、`float` 等基础类型作为全局状态
 - 禁止变量名与标准库或系统名称冲突
+
+
+## 五、Shader 命名规范
+
+### 5.1 Uniform 变量
+
+- 所有传递给 Shader 的 Uniform 变量必须使用 `u_` 前缀
+- 使用 PascalCase 命名（首字母大写）
+
+| 类型 | 命名规则 | 示例 |
+|------|----------|------|
+| 矩阵 | `u_` + 名称 | `u_MVP`, `u_Model`, `u_View` |
+| 纹理 | `u_` + 名称 | `u_MainTex`, `u_NormalMap` |
+| 颜色 | `u_` + 名称 | `u_Color`, `u_AmbientColor` |
+| 标量 | `u_` + 名称 | `u_Metallic`, `u_Smoothness` |
+| 向量 | `u_` + 名称 | `u_LightDir`, `u_LightColor` |
+
+### 5.2 Vertex 输入
+
+- 使用 `a_` 前缀（attribute）
+- 使用 PascalCase 命名
+
+```glsl
+layout(location = 0) in vec3 a_Pos;
+layout(location = 1) in vec3 a_Normal;
+layout(location = 2) in vec2 a_TexCoord;
+```
+
+### 5.3 Varying 变量
+
+- 使用 `v` 前缀（无下划线）
+- 使用 PascalCase 命名
+
+```glsl
+out vec3 v_Normal;
+out vec2 v_TexCoord;
+```
+
+### 5.4 Fragment 输出
+
+- 无前缀
+- 使用 camelCase 或 PascalCase
+
+```glsl
+out vec4 fragColor;
+```
+
+### 5.5 示例
+
+```glsl
+// Vertex Shader
+uniform mat4 u_MVP;
+uniform mat4 u_Model;
+
+layout(location = 0) in vec3 a_Pos;
+layout(location = 1) in vec3 a_Normal;
+
+out vec3 v_Normal;
+out vec2 v_TexCoord;
+
+// Fragment Shader
+uniform sampler2D u_MainTex;
+uniform vec4 u_Color;
+
+in vec3 v_Normal;
+in vec2 v_TexCoord;
+
+out vec4 fragColor;
+```

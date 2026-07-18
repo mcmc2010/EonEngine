@@ -6,7 +6,7 @@
 
 namespace AMEE {
 
-class IPlatformGLContext;
+class IPlatformContext;
 
 class Camera : public Component {
 public:
@@ -25,7 +25,7 @@ public:
     // Aspect ratio
     void SetAspect(float Aspect) { m_Aspect = Aspect; }
     float GetAspect() const { return m_Aspect; }
-    void UpdateAspect(IPlatformGLContext* ctx);
+    void UpdateAspect(IPlatformContext* ctx);
 
     // Matrices (uses Owner Entity's position)
     Mat4 GetViewMatrix() const;

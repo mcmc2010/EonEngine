@@ -14,6 +14,7 @@ enum class UniformType : uint8_t {
     Float3,
     Float4,
     Int,
+    Mat3,
     Mat4,
 };
 
@@ -45,6 +46,7 @@ public:
     virtual void setFloat3(const std::string& name, float x, float y, float z) = 0;
     virtual void setFloat4(const std::string& name, float x, float y, float z, float w) = 0;
     virtual void setInt   (const std::string& name, int v) = 0;
+    virtual void setMat3  (const std::string& name, const float* data) = 0;
     virtual void setMat4  (const std::string& name, const float* data) = 0;
 
     virtual std::vector<UniformDesc> getUniforms() const = 0;

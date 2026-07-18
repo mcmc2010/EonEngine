@@ -166,6 +166,11 @@ void GLShaderProgram::setMat4(const std::string& name, const float* data)
     glUniformMatrix4fv(cacheUniformLocation(name), 1, GL_FALSE, data);
 }
 
+void GLShaderProgram::setMat3(const std::string& name, const float* data)
+{
+    glUniformMatrix3fv(cacheUniformLocation(name), 1, GL_FALSE, data);
+}
+
 std::vector<UniformDesc> GLShaderProgram::getUniforms() const
 {
     std::vector<UniformDesc> result;

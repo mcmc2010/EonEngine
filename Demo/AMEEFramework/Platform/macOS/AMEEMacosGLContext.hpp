@@ -2,13 +2,13 @@
 #define __AMEE_MACOSGLCONTEXT_H__
 #pragma once
 #import <Cocoa/Cocoa.h>
-#include "../../Core/Platform/IAMEEPlatformGLContext.hpp"
+#include "../../Core/Platform/IAMEEPlatformContext.hpp"
 
 @class MacGLView;
 
 namespace AMEE {
 
-class MacosGLContext : public IPlatformGLContext {
+class MacosGLContext : public IPlatformContext {
 public:
     MacosGLContext();
     ~MacosGLContext() override;

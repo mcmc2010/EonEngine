@@ -13,11 +13,15 @@ public:
     RHIOpenGL() = default;
     ~RHIOpenGL() override = default;
 
+    // Initialization
+    void init() override;
+
     // Frame
     void setClearColor(float r, float g, float b, float a) override;
     void clear() override;
     void setViewport(const RHIViewport& vp) override;
     void setDepthMask(bool Write) override;
+    void setDepthFunc(bool LessEqual) override;
     void present() override;
 
     // VBO

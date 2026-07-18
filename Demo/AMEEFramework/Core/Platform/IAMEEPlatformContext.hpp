@@ -1,10 +1,12 @@
-#ifndef __AMEE_IPLATFORMGLCONTEXT_H__
-#define __AMEE_IPLATFORMGLCONTEXT_H__
+#ifndef __AMEE_IPLATFORMCONTEXT_H__
+#define __AMEE_IPLATFORMCONTEXT_H__
 #pragma once
 namespace AMEE {
-class IPlatformGLContext {
+
+//
+class IPlatformContext {
 public:
-    virtual ~IPlatformGLContext() = default;
+    virtual ~IPlatformContext() = default;
 
     virtual bool create(void* windowHandle) = 0;
     virtual void destroy() = 0;
@@ -14,4 +16,4 @@ public:
 };
 } // namespace AMEE
 
-#endif // __AMEE_IPLATFORMGLCONTEXT_H__
+#endif // __AMEE_IPLATFORMCONTEXT_H__
