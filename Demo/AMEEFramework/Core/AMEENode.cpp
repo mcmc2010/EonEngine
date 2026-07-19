@@ -4,28 +4,42 @@
 
 namespace AMEE {
 
-void Node::AddChild(std::unique_ptr<Node> Child)
+//
+bool Node::AddChild(std::unique_ptr<Node> Child)
 {
-    if (!Child) return;
+    if (!Child) {
+        return false;
+    }
+    
     if (Child->m_pParent) {
         AMEE_LOG_WARN("Node", "Child already has a parent");
-        return;
+        return false;
     }
     Child->m_pParent = this;
     m_Children.push_back(std::move(Child));
+    return true;
 }
 
-void Node::RemoveChild(Node* Child)
+std::unique_ptr<Node> Node::RemoveChild(Node* Child)
 {
-    if (!Child) return;
+    if (!Child) {
+        return nullptr;
+    }
+    
+    //
     auto it = std::find_if(m_Children.begin(), m_Children.end(),
                            [Child](const std::unique_ptr<Node>& Ptr) {
                                return Ptr.get() == Child;
                            });
     if (it != m_Children.end()) {
-        (*it)->m_pParent = nullptr;
+        
+        auto extracted = std::move(*it);
         m_Children.erase(it);
+        extracted->m_pParent = nullptr;
+        return extracted;
     }
+    
+    return nullptr;
 }
 
 bool Node::IsActiveInHierarchy() const

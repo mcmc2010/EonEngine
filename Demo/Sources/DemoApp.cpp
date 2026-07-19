@@ -115,6 +115,7 @@ bool DemoApp::OnInit()
 
     auto CameraEntity = std::make_unique<Entity>();
     CameraEntity->SetName("MainCamera");
+    CameraEntity->SetTag(TAG_MAINCAMERA);
     CameraEntity->SetPosition({0, 1.5f, 4});
 
     m_pCamera = CameraEntity->AddComponent<Camera>(60.0f, 0.1f, 1000.0f);

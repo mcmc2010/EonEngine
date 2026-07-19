@@ -46,6 +46,16 @@ Mat4 Camera::GetViewMatrix() const
 
 Mat4 Camera::GetProjectionMatrix() const
 {
+    switch (m_ProjectionType) {
+        case CameraProjection::Perspective:
+            return Mat4::Perspective(m_FovDeg, m_Aspect, m_Near, m_Far);
+
+        case CameraProjection::Orthographic: {
+            float halfH = m_FovDeg * 0.5f;
+            float halfW = halfH * m_Aspect;
+            return Mat4::Ortho(-halfW, halfW, -halfH, halfH, m_Near, m_Far);
+        }
+    }
     return Mat4::Perspective(m_FovDeg, m_Aspect, m_Near, m_Far);
 }
 

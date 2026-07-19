@@ -1,5 +1,6 @@
 #include "AMEEScene.hpp"
 #include "Entity/AMEEEntity.hpp"
+#include "Components/AMEEComponent.hpp"
 #include "Components/AMEELight.hpp"
 #include "Components/AMEEMeshFilter.hpp"
 #include "Components/AMEEMeshRenderer.hpp"
@@ -12,6 +13,115 @@
 #include "Log/AMEELog.hpp"
 
 namespace AMEE {
+
+////
+bool Scene::AddChild(std::unique_ptr<Node> child)
+{
+    // 1. 在移动前提取原始指针
+    Node* rawPtr = child.get();
+    Entity* entity = dynamic_cast<Entity*>(rawPtr);
+
+    // 2. 调用父类添加（转移所有权）
+    if (!Node::AddChild(std::move(child))) {
+        return false;
+    }
+
+    // 3. 如果是 Entity，触发添加事件
+    if (entity) {
+        return OnAddedChild(entity);
+    }
+    return true;
+}
+
+std::unique_ptr<Node> Scene::RemoveChild(Node* child)
+{
+    auto* entity = dynamic_cast<Entity*>(child);
+    if (entity) {
+        this->OnRemovedChild(entity);
+    }
+    
+    //
+    return Node::RemoveChild(child);
+}
+
+bool Scene::OnAddedChild(Entity *entity)
+{
+    if(!entity) {
+        return false;
+    }
+    
+    // 1. Set scene reference
+    entity->SetScene(this);
+
+    // 2. Process all components
+    for (const auto& comp : entity->GetAllComponents()) {
+        if (!OnAddedComponent(entity, comp.get())) {
+            return false;
+        }
+    }
+
+    // 3. Recursively process child entities
+    for (auto& child : entity->GetChildren()) {
+        Entity* subEntity = dynamic_cast<Entity*>(child.get());
+        if (subEntity) {
+            if (!OnAddedChild(subEntity)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+
+void Scene::OnRemovedChild(Entity* entity)
+{
+    if(!entity) {
+        return;
+    }
+    
+    // 1. Process all components
+    for (const auto& comp : entity->GetAllComponents()) {
+        OnRemovedComponent(entity, comp.get());
+    }
+
+    // 2. Recursively process child entities
+    for (auto& child : entity->GetChildren()) {
+        Entity* subEntity = dynamic_cast<Entity*>(child.get());
+        if (subEntity) {
+            OnRemovedChild(subEntity);
+        }
+    }
+
+    // 3. Clear scene reference
+    entity->SetScene(nullptr);
+}
+
+bool Scene::OnAddedComponent(Entity *entity, Component *comp)
+{
+    // 检测主相机
+    if (auto* camera = dynamic_cast<Camera*>(comp)) {
+        if (entity->GetTag() == TAG_MAINCAMERA) {
+            if (m_pMainCamera && m_pMainCamera != camera) {
+                AMEE_LOG_WARN("Scene", "Multiple main cameras detected, replacing previous one");
+                // 可选：将旧相机的 Tag 改为 "Untagged"
+                m_pMainCamera->GetOwner()->SetTag(TAG_UNTAGGED);
+            }
+            m_pMainCamera = camera;
+        }
+    }
+    return true;
+}
+
+void Scene::OnRemovedComponent(Entity *ent, Component *comp)
+{
+    // 如果移除的是主相机组件，清理指针
+    if (auto* camera = dynamic_cast<Camera*>(comp)) {
+        if (m_pMainCamera == camera) {
+            m_pMainCamera = nullptr;
+            AMEE_LOG_INFO("Scene", "Main camera component removed, pointer cleared");
+        }
+    }
+}
 
 static void CollectLightsRecursive(const std::vector<std::unique_ptr<Node>>& Children,
                                     std::vector<Light*>& OutLights)
@@ -74,7 +184,7 @@ void Scene::DrawSkybox(RHI* rhi, Camera* pCamera)
 
     Mat4 Proj = pCamera->GetProjectionMatrix();
     Mat4 VP = Proj * RotView;
-    Mat4 InvVP = VP.InverseTransform();
+    Mat4 InvVP = VP.Inverse();
 
     // Skybox render state
     rhi->setDepthMask(false);       // Disable depth writing
@@ -148,23 +258,40 @@ void Scene::Update(float DeltaTime)
 
 void Scene::Render(RHI* rhi, const Mat4& ViewProj)
 {
-    // Iterate scene and render all MeshRenderers recursively
-    std::function<void(const std::vector<std::unique_ptr<Node>>&)> RenderNodes =
-        [&](const std::vector<std::unique_ptr<Node>>& Children) {
-            for (auto& Child : Children) {
-                if (!Child || !Child->IsActive()) continue;
+    RenderChildren(rhi, ViewProj, this->GetChildren());
+}
 
-                if (auto* Ent = dynamic_cast<Entity*>(Child.get())) {
-                    if (auto* Renderer = Ent->GetComponent<MeshRenderer>()) {
-                        if (Renderer->IsVisible()) {
-                            Renderer->Draw(rhi, ViewProj);
-                        }
-                    }
-                }
-                RenderNodes(Child->GetChildren());
-            }
-        };
-    RenderNodes(this->GetChildren());
+void Scene::RenderChildren(RHI* rhi, const Mat4& ViewProj, const std::vector<std::unique_ptr<Node>>& Children)
+{
+    for (auto& Child : Children) {
+        if (!Child || !Child->IsActive()) continue;
+
+        if (auto* Ent = dynamic_cast<Entity*>(Child.get())) {
+            OnPreRender(rhi, ViewProj, Ent);
+            OnRender(rhi, ViewProj, Ent);
+            OnPostRender(rhi, ViewProj, Ent);
+        }
+
+        RenderChildren(rhi, ViewProj, Child->GetChildren());
+    }
+}
+
+void Scene::OnRender(RHI* rhi, const Mat4& ViewProj, Entity* entity)
+{
+    // Check if entity's layer is visible to the main camera
+    if (m_pMainCamera) {
+        LayerMask entityLayer = entity->GetLayer();
+        LayerMask cullingMask = m_pMainCamera->GetCullingMask();
+        if (!cullingMask.ContainsAny(entityLayer)) {
+            return;  // Skip - not in camera's culling mask
+        }
+    }
+
+    if (auto* Renderer = entity->GetComponent<MeshRenderer>()) {
+        if (Renderer->IsVisible()) {
+            Renderer->Draw(rhi, ViewProj);
+        }
+    }
 }
 
 } // namespace AMEE

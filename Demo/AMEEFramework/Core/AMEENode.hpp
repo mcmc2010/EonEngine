@@ -13,8 +13,9 @@ public:
     virtual ~Node() = default;
 
     // Hierarchy
-    void AddChild(std::unique_ptr<Node> Child);
-    void RemoveChild(Node* Child);
+    virtual bool AddChild(std::unique_ptr<Node> Child);
+    virtual std::unique_ptr<Node> RemoveChild(Node* Child);
+    
     Node* GetParent() const { return m_pParent; }
     const std::vector<std::unique_ptr<Node>>& GetChildren() const { return m_Children; }
     size_t GetChildCount() const { return m_Children.size(); }

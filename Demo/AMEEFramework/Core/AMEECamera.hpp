@@ -6,13 +6,41 @@
 
 namespace AMEE {
 
+enum class CameraType : uint8_t {
+    Base = 0,
+    Overlay = 1,
+};
+
+enum class CameraUsage : uint8_t {
+    Main,
+    Custom,
+};
+
+enum class CameraProjection : uint8_t {
+    Perspective,
+    Orthographic
+};
+
 class IPlatformContext;
 
 class Camera : public Component {
 public:
     Camera(float FovDeg = 60.0f, float Near = 0.1f, float Far = 1000.0f);
 
-    // Rotation (stored in component, syncs to Entity)
+    // Camera type
+    CameraType GetCameraType() const { return m_CameraType; }
+    void SetCameraType(CameraType Type) { m_CameraType = Type; }
+
+    CameraUsage GetCameraUsage() const { return m_CameraUsage; }
+    void SetCameraUsage(CameraUsage Usage) { m_CameraUsage = Usage; }
+
+    CameraProjection GetProjectionType() const { return m_ProjectionType; }
+    void SetProjectionType(CameraProjection Type) { m_ProjectionType = Type; }
+
+    LayerMask GetCullingMask() const { return m_CullingMask; }
+    void SetCullingMask(LayerMask mask) { m_CullingMask = mask; }
+    
+    // Rotation
     float GetYaw() const { return m_Yaw; }
     float GetPitch() const { return m_Pitch; }
     void SetRotation(float Yaw, float Pitch);
@@ -37,6 +65,14 @@ public:
     Vec3 GetUp() const;
 
 private:
+    CameraType m_CameraType = CameraType::Base;
+    CameraUsage m_CameraUsage = CameraUsage::Main;
+    CameraProjection m_ProjectionType = CameraProjection::Perspective;
+
+    //
+    LayerMask m_CullingMask = LayerMask::Everything(); // 默认全看
+    
+    //
     float m_Yaw    = -90.0f;
     float m_Pitch  = 0.0f;
     float m_FovDeg;

@@ -5,7 +5,7 @@ namespace AMEE {
 
 Mat4 Entity::GetLocalMatrix() const
 {
-    return Mat4::Trs(m_vPosition, m_vRotation, m_vScale);
+    return Mat4::TRS(m_vPosition, m_vRotation, m_vScale);
 }
 
 Mat4 Entity::GetWorldMatrix() const

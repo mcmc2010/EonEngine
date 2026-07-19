@@ -4,7 +4,8 @@ namespace AMEE {
 
 Object::Object(ObjectType Type)
     :   m_Type(Type), 
-        m_ID(IDGenerator::Generate(ToIDType(Type)))
+        m_ID(IDGenerator::Generate(ToIDType(Type))),
+        m_Tag(TAG_UNTAGGED)
 {
 }
 

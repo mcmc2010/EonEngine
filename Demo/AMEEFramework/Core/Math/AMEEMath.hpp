@@ -324,6 +324,69 @@ struct Mat4 {
                 result.at(j, i) = at(i, j);
         return result;
     }
+    
+    Mat4 Inverse() const {
+        // 1:
+        float a[4][4];
+        float result[4][4] = {0};
+        
+        for (int row = 0; row < 4; row++) {
+            for (int col = 0; col < 4; col++) {
+                a[row][col] = m[col * 4 + row];  // 列主序 → 行主序
+                result[row][col] = (row == col) ? 1.0f : 0.0f;
+            }
+        }
+
+        // 2: Gauss-Jordan elimination
+        const float EPSILON = 1e-8f;
+        for (int col = 0; col < 4; col++) {
+            // 选主元（在当前列 col 中找绝对值最大的行）
+            int pivotRow = col;
+            float maxAbs = std::fabs(a[col][col]);
+            for (int row = col + 1; row < 4; row++) {
+                float val = std::fabs(a[row][col]);
+                if (val > maxAbs) {
+                    maxAbs = val;
+                    pivotRow = row;
+                }
+            }
+
+            if (maxAbs < EPSILON) {
+                return Identity();
+            }
+
+            if (pivotRow != col) {
+                for (int j = 0; j < 4; j++) {
+                    std::swap(a[col][j], a[pivotRow][j]);
+                    std::swap(result[col][j], result[pivotRow][j]);
+                }
+            }
+            
+            float pivotVal = a[col][col];
+            for (int j = 0; j < 4; j++) {
+                a[col][j] /= pivotVal;
+                result[col][j] /= pivotVal;
+            }
+
+            for (int row = 0; row < 4; row++) {
+                if (row == col) continue;
+                float factor = a[row][col];
+                for (int j = 0; j < 4; j++) {
+                    a[row][j] -= factor * a[col][j];
+                    result[row][j] -= factor * result[col][j];
+                }
+            }
+        }
+
+        // 3:
+        Mat4 inv;
+        for (int row = 0; row < 4; row++) {
+            for (int col = 0; col < 4; col++) {
+                inv.m[col * 4 + row] = result[row][col];  //
+            }
+        }
+        return inv;
+    }
 
     // Simple inverse for transformation matrices (rotation + translation)
     // Not a general matrix inverse
@@ -354,7 +417,7 @@ struct Mat4 {
     }
 
     // Translate * Rotate * Scale (TRS)
-    static Mat4 Trs(const Vec3& position, const Vec3& EulerDeg, const Vec3& Scale) {
+    static Mat4 TRS(const Vec3& position, const Vec3& EulerDeg, const Vec3& Scale) {
         return Translate(position)
              * RotateZ(EulerDeg.z)
              * RotateY(EulerDeg.y)
