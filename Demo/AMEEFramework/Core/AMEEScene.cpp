@@ -4,6 +4,7 @@
 #include "Components/AMEELight.hpp"
 #include "Components/AMEEMeshFilter.hpp"
 #include "Components/AMEEMeshRenderer.hpp"
+#include "Components/AMEEGridHelper.hpp"
 #include "AMEECamera.hpp"
 #include "../Render/Shader/AMEEShaderProgram.hpp"
 #include "../Render/AMEEMesh.hpp"
@@ -256,9 +257,39 @@ void Scene::Update(float DeltaTime)
     }
 }
 
-void Scene::Render(RHI* rhi, const Mat4& ViewProj)
+void Scene::Render(RHI* rhi)
 {
-    RenderChildren(rhi, ViewProj, this->GetChildren());
+    if (!m_pMainCamera) return;
+
+    Mat4 VP = m_pMainCamera->GetProjectionMatrix() * m_pMainCamera->GetViewMatrix();
+
+    PreRenderChildren(rhi, VP, this->GetChildren());
+    RenderChildren(rhi, VP, this->GetChildren());
+    PostRenderChildren(rhi, VP, this->GetChildren());
+}
+
+void Scene::PreRenderChildren(RHI* rhi, const Mat4& ViewProj, const std::vector<std::unique_ptr<Node>>& Children)
+{
+    for (auto& Child : Children) {
+        if (!Child || !Child->IsActive()) continue;
+
+        if (auto* Ent = dynamic_cast<Entity*>(Child.get())) {
+            OnPreRender(rhi, ViewProj, Ent);
+        }
+        PreRenderChildren(rhi, ViewProj, Child->GetChildren());
+    }
+}
+
+void Scene::PostRenderChildren(RHI* rhi, const Mat4& ViewProj, const std::vector<std::unique_ptr<Node>>& Children)
+{
+    for (auto& Child : Children) {
+        if (!Child || !Child->IsActive()) continue;
+
+        if (auto* Ent = dynamic_cast<Entity*>(Child.get())) {
+            OnPostRender(rhi, ViewProj, Ent);
+        }
+        PostRenderChildren(rhi, ViewProj, Child->GetChildren());
+    }
 }
 
 void Scene::RenderChildren(RHI* rhi, const Mat4& ViewProj, const std::vector<std::unique_ptr<Node>>& Children)
@@ -267,12 +298,31 @@ void Scene::RenderChildren(RHI* rhi, const Mat4& ViewProj, const std::vector<std
         if (!Child || !Child->IsActive()) continue;
 
         if (auto* Ent = dynamic_cast<Entity*>(Child.get())) {
-            OnPreRender(rhi, ViewProj, Ent);
+
             OnRender(rhi, ViewProj, Ent);
-            OnPostRender(rhi, ViewProj, Ent);
+
         }
 
         RenderChildren(rhi, ViewProj, Child->GetChildren());
+    }
+}
+
+void Scene::OnPreRender(RHI* rhi, const Mat4& ViewProj, Entity* entity)
+{
+    // Check if entity's layer is visible to the main camera
+    if (m_pMainCamera) {
+        LayerMask entityLayer = entity->GetLayer();
+        LayerMask cullingMask = m_pMainCamera->GetCullingMask();
+        if (!cullingMask.ContainsAny(entityLayer)) {
+            return;  // Skip - not in camera's culling mask
+        }
+    }
+    
+    // Draw editor/helper gizmos
+    if (auto* grid = entity->GetComponent<GridHelper>()) {
+        if(grid->IsVisible()) {
+            grid->Draw(rhi, ViewProj);
+        }
     }
 }
 

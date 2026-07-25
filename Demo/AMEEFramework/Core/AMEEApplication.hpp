@@ -5,6 +5,7 @@
 #include "Platform/IAMEEPlatformContext.hpp"
 #include "Platform/IAMEEPlatformLoop.hpp"
 #include "Platform/IAMEEPlatformInput.hpp"
+#include "AMEERenderPipeline.hpp"
 #include "../Render/AMEERHI.hpp"
 #include "../Render/Shader/AMEEShaderProgram.hpp"
 #include <memory>
@@ -36,6 +37,7 @@ public:
     IPlatformLoop* GetGameLoop() const { return m_pGameLoop.get(); }
     IPlatformInput* GetInput() const { return m_pInput.get(); }
     RHI* GetRHI() const { return m_pRHI.get(); }
+    RenderPipeline* GetPipeline() const { return m_pPipeline.get(); }
 
 protected:
     // Override in subclass for custom init/render/shutdown
@@ -58,6 +60,7 @@ private:
     std::unique_ptr<IPlatformLoop> m_pGameLoop;
     std::unique_ptr<IPlatformInput> m_pInput;
     std::unique_ptr<RHI> m_pRHI;
+    std::unique_ptr<RenderPipeline> m_pPipeline;
     bool m_Running = false;
 };
 

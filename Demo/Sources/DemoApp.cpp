@@ -16,7 +16,7 @@ bool DemoApp::OnInit()
 {
     RHI* rhi = GetRHI();
     auto& assets = AssetManager::GetSingleton();
-
+    
     // Use built-in default shader (PBR ready)
     m_ShaderHandle = assets.GetBuiltinShader(BuiltID::Shader_Default);
     if (!m_ShaderHandle.IsValid()) {
@@ -170,38 +170,7 @@ void DemoApp::OnFixedUpdate(float fixedDt)
 
 void DemoApp::OnRender(double deltaTime, double totalTime, double alpha)
 {
-    RHI* rhi = GetRHI();
-
-    rhi->setClearColor(m_pScene->GetAmbientColor().x,
-                       m_pScene->GetAmbientColor().y,
-                       m_pScene->GetAmbientColor().z, 1.0f);
-    rhi->clear();
-
-    // Update camera aspect ratio (in case window resized)
-    m_pCamera->UpdateAspect(GetContext());
-
-    Mat4 View = m_pCamera->GetViewMatrix();
-    Mat4 Proj = m_pCamera->GetProjectionMatrix();
-    Mat4 VP = Proj * View;
-
-    auto& Assets = AssetManager::GetSingleton();
-    m_pShader = Assets.GetShader(m_ShaderHandle);
-    m_pScene->ApplyLighting(m_pShader);
-
-    // Skybox
-    m_pScene->DrawSkybox(rhi, m_pCamera);
-
-    // Grid
-    if (m_pGridHelper && m_pShader) {
-        Mat4 GridMVP = VP;
-        m_pShader->use();
-        m_pShader->setMat4("u_MVP", GridMVP.Data());
-        m_pGridHelper->Draw(rhi, VP);
-    }
-    
-    m_pScene->Render(rhi, VP);
-
-
+    GetPipeline()->Render(m_pScene.get());
 }
 
 void DemoApp::OnShutdown()

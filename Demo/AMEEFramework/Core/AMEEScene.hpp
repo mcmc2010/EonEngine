@@ -38,7 +38,7 @@ public:
     
     //
     void Update(float DeltaTime);
-    void Render(RHI* rhi, const Mat4& ViewProj);
+    void Render(RHI* rhi);
 
     // Skybox & Environment
     void SetSkybox(MaterialHandle Handle) { m_Skybox = Handle; }
@@ -62,12 +62,15 @@ protected:
     
 protected:
     // Render hooks (override in subclass for custom behavior)
-    virtual void OnPreRender(RHI* rhi, const Mat4& ViewProj, Entity* entity) {}
+    virtual void OnPreRender(RHI* rhi, const Mat4& ViewProj, Entity* entity);
     virtual void OnRender(RHI* rhi, const Mat4& ViewProj, Entity* entity);
     virtual void OnPostRender(RHI* rhi, const Mat4& ViewProj, Entity* entity) {}
 
+    //
     // Recursive render
-    void RenderChildren(RHI* rhi, const Mat4& ViewProj, const std::vector<std::unique_ptr<Node>>& Children);
+    virtual void PreRenderChildren(RHI* rhi, const Mat4& ViewProj, const std::vector<std::unique_ptr<Node>>& Children);
+    virtual void PostRenderChildren(RHI* rhi, const Mat4& ViewProj, const std::vector<std::unique_ptr<Node>>& Children);
+    virtual void RenderChildren(RHI* rhi, const Mat4& ViewProj, const std::vector<std::unique_ptr<Node>>& Children);
 
 private:
     //

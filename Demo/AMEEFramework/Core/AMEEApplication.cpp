@@ -49,6 +49,9 @@ bool Application::Init(const ApplicationConfig& config)
     // Initialize RHI (enable seamless cubemap, etc.)
     m_pRHI->init();
 
+    // Create render pipeline
+    m_pPipeline = std::make_unique<RenderPipeline>(m_pRHI.get());
+
     // Default image flip for 2D textures
     SetImageFlipVertical(true);
 
