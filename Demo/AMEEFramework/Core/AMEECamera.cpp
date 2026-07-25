@@ -38,6 +38,11 @@ void Camera::UpdateAspect(IPlatformContext* ctx)
     }
 }
 
+Vec3 Camera::GetPosition() const
+{
+    return GetOwner() ? GetOwner()->GetPosition() : Vec3(0);
+}
+
 Mat4 Camera::GetViewMatrix() const
 {
     Vec3 Pos = GetOwner() ? GetOwner()->GetPosition() : Vec3(0);

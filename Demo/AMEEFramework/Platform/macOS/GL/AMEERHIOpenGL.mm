@@ -266,6 +266,54 @@ void RHIOpenGL::bindCubemap(uint32_t id, uint32_t slot)
     GL_CHECK(glBindTexture(GL_TEXTURE_CUBE_MAP, id));
 }
 
+// Framebuffer
+RHIFramebuffer RHIOpenGL::createFramebuffer(int width, int height)
+{
+    RHIFramebuffer fb;
+    fb.Width = width;
+    fb.Height = height;
+
+    GL_CHECK(glGenFramebuffers(1, &fb.FBO));
+    GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, fb.FBO));
+
+    GL_CHECK(glGenTextures(1, &fb.DepthTexture));
+    GL_CHECK(glBindTexture(GL_TEXTURE_2D, fb.DepthTexture));
+    GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0,
+                           GL_DEPTH_COMPONENT, GL_FLOAT, nullptr));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER));
+    float borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
+    GL_CHECK(glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor));
+
+    GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                                     GL_TEXTURE_2D, fb.DepthTexture, 0));
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+
+    GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+
+    return fb;
+}
+
+void RHIOpenGL::destroyFramebuffer(RHIFramebuffer& fb)
+{
+    if (fb.FBO) { GL_CHECK(glDeleteFramebuffers(1, &fb.FBO)); fb.FBO = 0; }
+    if (fb.DepthTexture) { GL_CHECK(glDeleteTextures(1, &fb.DepthTexture)); fb.DepthTexture = 0; }
+}
+
+void RHIOpenGL::bindFramebuffer(const RHIFramebuffer& fb)
+{
+    GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, fb.FBO));
+    GL_CHECK(glViewport(0, 0, fb.Width, fb.Height));
+}
+
+void RHIOpenGL::bindDefaultFramebuffer()
+{
+    GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+}
+
 // Shader
 std::unique_ptr<ShaderProgram> RHIOpenGL::CreateShaderProgram()
 {

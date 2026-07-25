@@ -16,17 +16,19 @@ public:
 
     std::vector<MaterialHandle> m_Materials;
 
-
-
-    
-    //
+    // Material
     void SetMaterial(MaterialHandle H) { m_Materials = {H}; }
     void Draw(RHI* rhi, const Mat4& ViewProj);
-    
+
+    // Shadow
+    bool CastsShadow() const { return m_CastsShadow; }
+    void SetCastsShadow(bool Value) { m_CastsShadow = Value; }
+    bool ReceivesShadow() const { return m_ReceivesShadow; }
+    void SetReceivesShadow(bool Value) { m_ReceivesShadow = Value; }
+
 protected:
-    //
-    bool m_CastsShadow = true;    // 投射阴影
-    bool m_ReceivesShadow = true; // 接收阴影
+    bool m_CastsShadow = true;
+    bool m_ReceivesShadow = true;
 };
 
 } // namespace AMEE

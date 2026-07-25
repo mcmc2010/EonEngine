@@ -3,6 +3,7 @@
 #pragma once
 #include "Math/AMEEMath.hpp"
 #include "Components/AMEEComponent.hpp"
+#include "AMEEICamera.hpp"
 
 namespace AMEE {
 
@@ -23,7 +24,7 @@ enum class CameraProjection : uint8_t {
 
 class IPlatformContext;
 
-class Camera : public Component {
+class Camera : public Component, public ICamera {
 public:
     Camera(float FovDeg = 60.0f, float Near = 0.1f, float Far = 1000.0f);
 
@@ -56,13 +57,16 @@ public:
     void UpdateAspect(IPlatformContext* ctx);
 
     // Matrices (uses Owner Entity's position)
-    Mat4 GetViewMatrix() const;
-    Mat4 GetProjectionMatrix() const;
+    Mat4 GetViewMatrix() const override;
+    Mat4 GetProjectionMatrix() const override;
 
     // Direction vectors (based on Yaw/Pitch)
-    Vec3 GetForward() const;
+    Vec3 GetForward() const override;
     Vec3 GetRight() const;
     Vec3 GetUp() const;
+
+    // ICamera interface
+    Vec3 GetPosition() const override;
 
 private:
     CameraType m_CameraType = CameraType::Base;

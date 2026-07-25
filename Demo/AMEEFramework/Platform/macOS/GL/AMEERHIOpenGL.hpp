@@ -24,6 +24,12 @@ public:
     void setDepthFunc(bool LessEqual) override;
     void present() override;
 
+    // Framebuffer
+    RHIFramebuffer createFramebuffer(int width, int height) override;
+    void destroyFramebuffer(RHIFramebuffer& fb) override;
+    void bindFramebuffer(const RHIFramebuffer& fb) override;
+    void bindDefaultFramebuffer() override;
+
     // VBO
     uint32_t createVertexBuffer(const float* data, uint32_t size) override;
     void destroyVertexBuffer(uint32_t id) override;

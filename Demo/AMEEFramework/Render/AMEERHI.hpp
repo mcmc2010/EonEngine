@@ -85,6 +85,12 @@ public:
     // Shader
     virtual std::unique_ptr<ShaderProgram> CreateShaderProgram() = 0;
 
+    // Framebuffer
+    virtual RHIFramebuffer createFramebuffer(int width, int height) = 0;
+    virtual void destroyFramebuffer(RHIFramebuffer& fb) = 0;
+    virtual void bindFramebuffer(const RHIFramebuffer& fb) = 0;
+    virtual void bindDefaultFramebuffer() = 0;
+
     // Draw
     virtual void drawArrays(RHIPrimitive primitive, uint32_t count, uint32_t offset = 0) = 0;
     virtual void drawElements(RHIPrimitive primitive, uint32_t count, uint32_t offset = 0) = 0;

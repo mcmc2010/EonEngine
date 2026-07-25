@@ -257,7 +257,7 @@ void Scene::Update(float DeltaTime)
     }
 }
 
-void Scene::Render(RHI* rhi)
+void Scene::Render(RHI* rhi, ICamera* camera)
 {
     if (!m_pMainCamera) return;
 
@@ -341,6 +341,30 @@ void Scene::OnRender(RHI* rhi, const Mat4& ViewProj, Entity* entity)
         if (Renderer->IsVisible()) {
             Renderer->Draw(rhi, ViewProj);
         }
+    }
+}
+
+void Scene::RenderDepth(RHI* rhi, ICamera* camera)
+{
+    if (!camera) return;
+    Mat4 VP = camera->GetViewProjection();
+    RenderDepthChildren(rhi, VP, this->GetChildren());
+}
+
+void Scene::RenderDepthChildren(RHI* rhi, const Mat4& LightVP, const std::vector<std::unique_ptr<Node>>& Children)
+{
+    for (auto& Child : Children) {
+        if (!Child || !Child->IsActive()) continue;
+
+        if (auto* Ent = dynamic_cast<Entity*>(Child.get())) {
+            if (auto* Renderer = Ent->GetComponent<MeshRenderer>()) {
+                if (Renderer->IsVisible() && Renderer->CastsShadow()) {
+                    Renderer->Draw(rhi, LightVP);
+                }
+            }
+        }
+
+        RenderDepthChildren(rhi, LightVP, Child->GetChildren());
     }
 }
 

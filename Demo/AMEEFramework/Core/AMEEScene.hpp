@@ -5,6 +5,7 @@
 #include "AMEEDefines.hpp"
 #include "AMEENode.hpp"
 #include "AMEEObject.hpp"
+#include "AMEEICamera.hpp"
 #include "Asset/AMEEAssetHandle.hpp"
 #include "Math/AMEEMath.hpp"
 #include <vector>
@@ -38,7 +39,8 @@ public:
     
     //
     void Update(float DeltaTime);
-    void Render(RHI* rhi);
+    void Render(RHI* rhi, ICamera* camera);
+    void RenderDepth(RHI* rhi, ICamera* camera);
 
     // Skybox & Environment
     void SetSkybox(MaterialHandle Handle) { m_Skybox = Handle; }
@@ -71,6 +73,9 @@ protected:
     virtual void PreRenderChildren(RHI* rhi, const Mat4& ViewProj, const std::vector<std::unique_ptr<Node>>& Children);
     virtual void PostRenderChildren(RHI* rhi, const Mat4& ViewProj, const std::vector<std::unique_ptr<Node>>& Children);
     virtual void RenderChildren(RHI* rhi, const Mat4& ViewProj, const std::vector<std::unique_ptr<Node>>& Children);
+
+    // Shadow depth rendering
+    virtual void RenderDepthChildren(RHI* rhi, const Mat4& LightVP, const std::vector<std::unique_ptr<Node>>& Children);
 
 private:
     //

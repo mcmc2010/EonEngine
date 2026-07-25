@@ -30,6 +30,14 @@ enum class RHIWrap : uint8_t {
     MirroredRepeat,
 };
 
+struct RHIFramebuffer {
+    uint32_t FBO = 0;
+    uint32_t DepthTexture = 0;
+    int Width = 0;
+    int Height = 0;
+    bool IsValid() const { return FBO != 0; }
+};
+
 }
 
 #endif // __AMEE_RHITYPES_H__
